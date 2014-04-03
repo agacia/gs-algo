@@ -190,6 +190,13 @@ public abstract class DecentralizedCommunityAlgorithm implements
 	}
 
 	/**
+	 * Allows to set generic parameters as a key,value 
+	 * @param params
+	 */
+	public void setParameters(Dictionary<String, Object> params) {
+	}
+	
+	/**
 	 * Set the random number generator for this algorithm. For sake of
 	 * reproducibility, the given random number generator shall be initiated
 	 * with a controlled seed.

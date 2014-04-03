@@ -31,7 +31,6 @@
  */
 package org.graphstream.algorithm.community;
 
-import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -41,34 +40,26 @@ import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 
 /**
- * This class implements the "Epidemic Community Detection Algorithm" as
- * presented by Raghavan <i>et al</i>. It also serves as base class for all
- * algorithms using the epidemic label propagation paradigm.
  * 
- * @reference U. N. Raghavan, R. Albert, and S. Kumara, “Near Linear Time Al-
- *            gorithm to Detect Community Structures in Large-scale Networks,”
- *            Physical Review E (Statistical, Nonlinear, and Soft Matter
- *            Physics), vol. 76, no. 3, 2007.
- * 
- * @author Guillaume-Jean Herbiet
+ * @author Agata Grzybek
  * 
  */
-public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm {
+public class MobileClusteringAlgorithm extends DecentralizedCommunityAlgorithm {
 
 	/**
 	 * Heard communities and their associated scores
 	 */
 	protected HashMap<Object, Double> communityScores;
 
-	public EpidemicCommunityAlgorithm() {
+	public MobileClusteringAlgorithm() {
 		super();
 	}
 
-	public EpidemicCommunityAlgorithm(Graph graph) {
+	public MobileClusteringAlgorithm(Graph graph) {
 		super(graph);
 	}
 
-	public EpidemicCommunityAlgorithm(Graph graph, String marker) {
+	public MobileClusteringAlgorithm(Graph graph, String marker) {
 		super(graph, marker);
 	}
 	
@@ -103,18 +94,12 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 		Object maxCommunity = null;
 		Double maxScore = Double.NEGATIVE_INFINITY;
 
-		// search for community with 0 similarity
-		ArrayList<Object> zeroSimilarityCommunityIds = new ArrayList<Object>();
-		
 		TreeMap<Object, Double> scores = new TreeMap<Object, Double>(communityScores);
 		for (Object c : scores.keySet()) {
 			Double s = communityScores.get(c);
 			if (s > maxScore || (s == maxScore && rng.nextDouble() >= 0.5)) {
 				maxCommunity = c;
 				maxScore = s;
-			}
-			if (s.equals(0.0)) {
-				zeroSimilarityCommunityIds.add(c);
 			}
 		}
 		
@@ -124,30 +109,16 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 		if (maxCommunity == null || node.getAttribute(marker) == null) {
 			originateCommunity(node);
 		}
-		else if (maxScore <= 0) {
-//			System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
-//					+ " with negative mobility measure (" + maxScore + "). is originator? " + node.hasAttribute(marker + ".originator"));
-			if (!node.hasAttribute(marker + ".originator")) {
-				originateCommunity(node);
-//				if ((boolean)node.getAttribute(marker + ".originator").equals(true)) {
-//					
-//				}
-			//if ((Double)node.getAttribute(marker+".score") < 1.0) { 
+		else if (maxScore < 0) {
+			if ((Double)node.getAttribute(marker+".score") < 1.0) { 
 				// originate new community if the node is not the originator of its current community
-//				System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
-//						+ " with negative mobility measure (" + maxScore + ")." 
-//						+ " Should originate ? Current com " + node.getAttribute(marker) + "," + node.getAttribute(marker+".score"));
-				
+				System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
+						+ " with negative mobility measure (" + maxScore + ")." 
+						+ " Should originate ? Current com " + node.getAttribute(marker) + "," + node.getAttribute(marker+".score"));
+				originateCommunity(node);
 			}
 		}
 		else {
-			// if max community is also a zero, one of the communities has to disjoin
-			for (Object com : zeroSimilarityCommunityIds) {
-				System.out.println("Checking if conflict node " + node.getId() + " has maxScore with " + maxCommunity + " and also 0 score with " + com);
-				if (com.equals(maxCommunity)) {
-					System.err.println("Conflict node " + node.getId() + " has maxScore " + maxScore +  " with " + maxCommunity + " and also 0 score ");
-				}
-			}
 			node.setAttribute(marker, maxCommunity);
 			node.setAttribute(marker + ".score", maxScore);
 		}

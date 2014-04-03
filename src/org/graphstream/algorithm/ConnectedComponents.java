@@ -289,9 +289,32 @@ public class ConnectedComponents extends SinkAdapter implements
 			for (Node n : graph.getNodeSet()) {
 				if (connectedComponentsMap.get(n) == maxIndex) {
 					giant.add(n);
-				}
+				} 
 			}
 			return giant;
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Computes a list of nodes that belong to the connected component with given id.
+	 * 
+	 * @return nodes of the CC.
+	 */
+	public List<Node> getConnectedComponent(Integer id) {
+		if (!started) {
+			compute();
+		}
+		// Get the list of nodes within this component
+		if (id != -1) {
+			ArrayList<Node> cc = new ArrayList<Node>();
+			for (Node n : graph.getNodeSet()) {
+				if (connectedComponentsMap.get(n) == id) {
+					cc.add(n);
+				} 
+			}
+			return cc;
 		} else {
 			return null;
 		}
@@ -360,6 +383,18 @@ public class ConnectedComponents extends SinkAdapter implements
 		}
 	}
 
+	public double getAverageConnectedComponentSize() {
+		double sum = 0.0;
+		int count = 0;
+		for (Integer c : connectedComponentsSize.keySet()) {
+			sum += c;
+		}
+		if (count == 0) {
+			return 0;
+		}
+		return sum / count;
+	}
+	
 	public Iterator<ConnectedComponent> iterator() {
 		while (components.size() > connectedComponents)
 			components.remove(components.getLastIndex());
