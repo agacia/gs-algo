@@ -1,0 +1,33 @@
+DGS004
+vanet 0 0
+st 1.0
+an 1 x=1326.5 y=1003.47591656 vehicleAngle=180.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+an 2 x=436.5 y=3391.53253638 vehicleAngle=0.0 vehiclePos=118.467463624 vehicleSpeed=10.0 vehicleLane="1"
+an 3 x=4186.5 y=3840.57512812 vehicleAngle=180.0 vehiclePos=90.5751281157 vehicleSpeed=10.0 vehicleLane="1"
+an 4 x=3953.5 y=3702.87897638 vehicleAngle=0.0 vehiclePos=27.1210236205 vehicleSpeed=10.0 vehicleLane="1"
+ae "1-2" 1 2 weight=270.645949912
+ae "1-3" 1 3 weight=270.645949912
+ae "1-4" 1 4 weight=270.645949912
+ae "2-3" 2 3 weight=270.645949912
+ae "2-4" 2 4 weight=270.645949912
+ae "3-4" 3 4 weight=270.645949912
+st 2.0
+cn 1 x=1326.5 y=1003.47591656 vehicleAngle=180.0 vehiclePos=113.475916562 vehicleSpeed=9.0 vehicleLane="1"
+cn 2 x=436.5 y=3391.53253638 vehicleAngle=0.0 vehiclePos=118.467463624 vehicleSpeed=9.0 vehicleLane="1"
+cn 3 x=4186.5 y=3840.57512812 vehicleAngle=180.0 vehiclePos=90.5751281157 vehicleSpeed=9.0 vehicleLane="1"
+cn 4 x=3953.5 y=3702.87897638 vehicleAngle=0.0 vehiclePos=27.1210236205 vehicleSpeed=9.0 vehicleLane="1"
+st 3.0
+cn 1 x=1326.5 y=1003.47591656 vehicleAngle=180.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+cn 2 x=436.5 y=3391.53253638 vehicleAngle=0.0 vehiclePos=118.467463624 vehicleSpeed=10.0 vehicleLane="1"
+cn 3 x=4186.5 y=3840.57512812 vehicleAngle=180.0 vehiclePos=90.5751281157 vehicleSpeed=9.0 vehicleLane="1"
+cn 4 x=3953.5 y=3702.87897638 vehicleAngle=0.0 vehiclePos=27.1210236205 vehicleSpeed=9.0 vehicleLane="1"
+st 4.0
+cn 1 x=1326.5 y=1003.47591656 vehicleAngle=180.0 vehiclePos=113.475916562 vehicleSpeed=1.0 vehicleLane="1"
+cn 2 x=436.5 y=3391.53253638 vehicleAngle=0.0 vehiclePos=118.467463624 vehicleSpeed=10.0 vehicleLane="2"
+cn 3 x=4186.5 y=3840.57512812 vehicleAngle=180.0 vehiclePos=90.5751281157 vehicleSpeed=9.0 vehicleLane="2"
+cn 4 x=3953.5 y=3702.87897638 vehicleAngle=0.0 vehiclePos=27.1210236205 vehicleSpeed=9.0 vehicleLane="2"
+st 5.0
+cn 1 x=1326.5 y=1003.47591656 vehicleAngle=180.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="2"
+cn 2 x=436.5 y=3391.53253638 vehicleAngle=0.0 vehiclePos=118.467463624 vehicleSpeed=10.0 vehicleLane="2"
+cn 3 x=4186.5 y=3840.57512812 vehicleAngle=180.0 vehiclePos=90.5751281157 vehicleSpeed=10.0 vehicleLane="2"
+cn 4 x=3953.5 y=3702.87897638 vehicleAngle=0.0 vehiclePos=27.1210236205 vehicleSpeed=10.0 vehicleLane="2"

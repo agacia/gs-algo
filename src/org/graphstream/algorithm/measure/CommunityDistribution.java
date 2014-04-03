@@ -38,6 +38,7 @@ import org.apache.commons.math.stat.descriptive.moment.*;
  * assignment on the specified graph as it evolves.
  * 
  * @author Guillaume-Jean Herbiet
+ * @modified Agata Grzybek
  * 
  */
 public class CommunityDistribution extends CommunityMeasure {
@@ -62,6 +63,8 @@ public class CommunityDistribution extends CommunityMeasure {
 	 */
 	protected float stdevSize = 0;
 
+	double[] distribution;
+	
 	/**
 	 * New size distribution measure using the specified marker as attribute
 	 * name for the community assignment.
@@ -89,7 +92,7 @@ public class CommunityDistribution extends CommunityMeasure {
 			int maxSize = 0;
 			int minSize = Integer.MAX_VALUE;
 
-			double[] distribution = new double[(int) M];
+			distribution = new double[(int) M];
 			int k = 0;
 			Mean mean = new Mean();
 			StandardDeviation stdev = new StandardDeviation();
@@ -124,6 +127,37 @@ public class CommunityDistribution extends CommunityMeasure {
 		return (int) M;
 	}
 
+	/**
+	 * Computes the size distribution of communities. Each cell of the returned
+	 * array contains the number of communities having size n where n is the index
+	 * of the cell. For example cell 0 counts how many communities have zero edges,
+	 * cell 5 counts how many nodes have five edges. The last index indicates
+	 * the maximum degree.
+	 * @complexity O(n) where n is the number of nodes.
+	 */
+	 public int[] sizeDistribution() {
+		if ((communities.keySet()).size() == 0)
+			return null;
+
+		int max = 0;
+		int[] sd;
+		int s;
+
+		for (Object c : communities.keySet()) {
+			s = (communities.get(c)).size();
+			if (s > max)
+				max = s;
+		}
+
+		sd = new int[max + 1];
+		for (Object c : communities.keySet()) {
+			s = (communities.get(c)).size();
+			sd[s] += 1;
+		}
+
+		return sd;
+	}
+	
 	/**
 	 * Get the biggest generated community
 	 * 
@@ -164,6 +198,16 @@ public class CommunityDistribution extends CommunityMeasure {
 			return 0;
 		else
 			return (communities.get(smallestCommunity)).size();
+	}
+	
+	public int communitySize(Object id) {
+//		Object communityMarker = node.getAttribute(marker);
+//		for (Object c : communities.keySet()) {
+			if (communities.get(id) == null)
+				return 0;
+			else
+				return (communities.get(id)).size();
+//		}
 	}
 
 	/**

@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2006 - 2013
  *     Stefan Balev     <stefan.balev@graphstream-project.org>
@@ -29,13 +30,23 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL-C and LGPL licenses and that you accept their terms.
  */
+
+/**
+ * 	Agata Grzybek     <agata.grzybek@uni.lu>
+ */
+
 package org.graphstream.algorithm.community;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.Dictionary;
 import java.util.HashMap;
 
+import org.graphstream.algorithm.measure.MobilityMeasure;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
+
 
 /**
  * This class implements an improved community detection algorithm based on the
@@ -46,7 +57,7 @@ import org.graphstream.graph.Node;
  *            (Statistical, Nonlinear, and Soft Matter Physics), vol. 79, no. 6,
  *            pp. 066 107+, 2009.
  * 
- * @author Guillaume-Jean Herbiet
+ * @author Agata Grzybek
  * 
  */
 public class MobileLeung extends EpidemicCommunityAlgorithm {
@@ -57,7 +68,11 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 	 */
 	protected String weightMarker = "weight";
 
-	protected String[] mobilityMarkers = null;
+	protected MobilityMeasure mobilityMeasure;
+	
+	HashMap<MobileMarker, String> mobilityMarkers;
+	protected String mobilityMetric = null;
+	protected BufferedWriter outLog = null;
 	
 	/**
 	 * Comparable node characteristic preference exponent
@@ -174,17 +189,19 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 	 *            community attribute marker
 	 * @param mobilitytMarkers
 	 *            edges containing mobility parameters
+	 * @param mobilitytMetric
+	 *            mobility metric
 	 * @param m
 	 *            comparable function preference exponent value
 	 * @param delta
 	 *            hop attenuation factor value
 	 */
-	public MobileLeung(Graph graph, String marker, String[] mobilityMarkers, double m,
+	public MobileLeung(Graph graph, String marker, HashMap<MobileMarker, String> mobilityMarkers, String mobilitytMetric, double m,
 			double delta) {
 		super(graph, marker);
 		this.mobilityMarkers = mobilityMarkers;
+		this.mobilityMetric = mobilitytMetric;
 		setParameters(m, delta);
-		System.out.println("In Mobile Leung, mobility markers: " + this.mobilityMarkers);
 	}
 	
 	/**
@@ -203,18 +220,20 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 	 *            edge weight marker
 	 * @param mobilitytMarkers
 	 *            edges containing mobility parameters
+	 * @param mobilityMetric
+	 *            mobility metric
 	 * @param m
 	 *            comparable function preference exponent value
 	 * @param delta
 	 *            hop attenuation factor value
 	 */
-	public MobileLeung(Graph graph, String marker, String weightMarker, String[] mobilityMarkers, double m,
+	public MobileLeung(Graph graph, String marker, String weightMarker, HashMap<MobileMarker, String> mobilityMarkers, String mobilityMetric, double m,
 			double delta) {
 		super(graph, marker);
 		this.weightMarker = weightMarker;
 		this.mobilityMarkers = mobilityMarkers;
+		this.mobilityMetric = mobilityMetric;
 		setParameters(m, delta);
-		System.out.println("In Mobile Leung, weightMarker: " + this.weightMarker + ", mobility markers: " + this.mobilityMarkers);
 	}
 	
 	/**
@@ -231,6 +250,29 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 		this.delta = delta;
 	}
 
+	/**
+	 * Sets the preference exponent and hop attenuation factor to the given
+	 * values.
+	 * 
+	 * @param m
+	 *            comparable function preference exponent value
+	 * @param delta
+	 *            hop attenuation factor value
+	 * @param weightMarker
+	 *            edge weight marker
+	 * @param mobilitytMarkers
+	 *            edges containing mobility parameters
+	 */
+	@Override
+	public void setParameters(Dictionary<String, Object> params) {
+		this.m = (Double) params.get("m");
+		this.delta = (Double) params.get("delta");
+		this.weightMarker = (String) params.get("weightMarker");
+		this.mobilityMarkers = (HashMap<MobileMarker, String>) params.get("mobilityMarkers");
+		this.mobilityMetric = (String) params.get("mobilityMetric");
+		this.outLog = (BufferedWriter) params.get("outLog");
+	}
+	
 	@Override
 	public void computeNode(Node node) {
 		/*
@@ -238,18 +280,25 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 		 */
 		Object previousCommunity = node.getAttribute(marker);
 		Double previousScore = (Double) node.getAttribute(marker + ".score");
+//		Integer degree = node.getEnteringEdgeSet().size();
+//		Integer previousDegree = degree;
+		
 		super.computeNode(node);
 
 		/*
 		 * Update the node label score
 		 */
 
-		// Handle first iteration
+		// Handle first iteration // originate new community
 		if (previousCommunity == null) {
 			previousCommunity = node.getAttribute(marker);
 			previousScore = (Double) node.getAttribute(marker + ".score");
-		}
-
+		} 
+//		else {
+//			previousDegree = (Integer) node.getAttribute("degree");
+//		}
+//		node.setAttribute("degree", degree);
+		
 		/*
 		 * The node is the originator of the community and hasn't changed
 		 * community at this iteration (or we are at the first simulation step):
@@ -259,6 +308,16 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 				&& (previousScore.equals(1.0)))
 			node.setAttribute(marker + ".score", 1.0);
 
+		/*
+		 * The node is the originator of the community and has no neighbours
+		 * (continue traveling without neighbors).
+		 * Keep the community id and the maximum score.
+		 */
+//		else if (previousDegree.equals(0) && degree.equals(0)) {
+//			node.setAttribute(marker, previousCommunity);
+//			node.setAttribute(marker + ".score", 1.0);
+//		}
+		
 		/*
 		 * Otherwise search for the highest score amongst neighbors and reduce
 		 * it by decreasing factor
@@ -274,7 +333,15 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 						maxLabelScore = (Double) v.getAttribute(marker + ".score");
 				}
 			}
-			node.setAttribute(marker + ".score", maxLabelScore - delta);
+			
+			/*
+			 *  If node disconnected from its neighbors, it has already originated community (in super.computeNode(node);
+			 *  The case when the node continues traveling without neighbors was handled earlier
+			 */
+			if (!maxLabelScore.equals(Double.NEGATIVE_INFINITY)) { 
+				node.setAttribute(marker + ".score", maxLabelScore - delta); // score indicates the distance from the originator, 
+				// if the originator of the community is the neighbour of the node, then the maxLabelScore is 1, so the node gets 1-delta
+			}
 		}
 	}
 
@@ -297,6 +364,11 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 		/*
 		 * Iterate over the nodes that this node "hears"
 		 */
+		Double mobilitySimilarity = 1.0;
+		
+		String speedMarker = this.mobilityMarkers.get(MobileMarker.SPEED);
+		String angleMarker = this.mobilityMarkers.get(MobileMarker.ANGLE);
+		
 		for (Edge e : u.getEnteringEdgeSet()) {
 			Node v = e.getOpposite(u);
 
@@ -304,83 +376,38 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 			 * Update the count for this community
 			 */
 			if (v.hasAttribute(marker)) {
-
+				Double nodeScore = (Double) v.getAttribute(marker + ".score");
+				
+				Double topologySimilarity = Math.pow(v.getInDegree(), m);
+				mobilitySimilarity = MobilityMeasure.computeRelativeMobility(u, v, speedMarker, angleMarker);
+				if (mobilitySimilarity < 0.0) {
+					mobilitySimilarity = 0.0;
+				}
+//				System.out.println("topologySimilarity " + topologySimilarity + ", mobilitySimilarity " + mobilitySimilarity);
 				// Compute the neighbor node current score
-				Double score = (Double) v.getAttribute(marker + ".score") * Math.pow(v.getInDegree(), m);
+				Double score = nodeScore * topologySimilarity * mobilitySimilarity;
 
-				/*
-				 * The rest of the formula depends on the weighted status of the
-				 * network
-				 */
-				Double weight;
-				if (e.hasAttribute(weightMarker)) {
-					if (e.isDirected()) {
-						Edge e2 = v.getEdgeToward(u.getId());
-						if (e2 != null && e2.hasAttribute(weightMarker)) {
-							weight = (Double) e.getAttribute(weightMarker)
-									+ (Double) e2.getAttribute(weightMarker);
-						}
-						else {
-							weight = (Double) e.getAttribute(weightMarker);
-						}
-					} else {
-						weight = (Double) e.getAttribute(weightMarker);
-					}
-				} else {
-					weight = 1.0;
-				}
-				// mobility weight 
-				Double distance = weight;
-				weight = 1.0;
-				Double mobilityWeight = 0.0;
-				if (this.mobilityMarkers != null) {
-					mobilityWeight = computeMobilityWeight(u, v, distance, this.mobilityMarkers);
-				}
-				// Update the score of the according community
+				// Update the score of the nodes from according community
 				if (communityScores.get(v.getAttribute(marker)) == null) {
-					communityScores.put(v.getAttribute(marker), score * weight * mobilityWeight);
+					communityScores.put(v.getAttribute(marker), score);
 				}
 				else {
-					Double newScore = communityScores.get(v.getAttribute(marker)) + (score * weight * mobilityWeight);
+					Double newScore = communityScores.get(v.getAttribute(marker)) + score;
 					communityScores.put(v.getAttribute(marker), newScore);
 				}
 
-//				System.out.println("u: " + u.getId() + ", v: " + v.getId() + 
-//						", v.getAttribute(marker.score): " + v.getAttribute(marker + ".score") + 
-//						", v.getInDegree(): " + v.getInDegree() + ", m: " + m + " score: "+ score + 
-//						", weight: " + weight + ", mobilityWeight: " + mobilityWeight + 
-//						", communityScores.get(v.getAttribute(marker)): " + communityScores.get(v.getAttribute(marker)));
+//				try {
+//					outLog.write("u: " + u.getId() + "\tv: " + v.getId() + 
+//							"\tv.score: " + v.getAttribute(marker + ".score") + 
+//							"\tv.degree: " + v.getInDegree() + "\ttopologySimilarity: " + topologySimilarity +
+//							"\tmobilitySimilarity: " + mobilitySimilarity + 
+//							"\tcommunityScores[" + v.getAttribute(marker) + "]: " + communityScores.get(v.getAttribute(marker)));
+//				} catch (IOException e1) {
+//					e1.printStackTrace();
+//				}
 
 			}
 		}
-	}
-
-	private Double computeMobilityWeight(Node u, Node v, Double distance, String[] mobilityMarkers) {
-		Double mobilityWeight = 1.0;
-		for (int i = 0; i < this.mobilityMarkers.length; ++i) {
-			String mobilityMarker = this.mobilityMarkers[i];
-			Double deltaSpeed = 0.0;
-			Double deltaAngle = 0.0;
-			if (mobilityMarker == "vehicleSpeed") {
-				Double valueU = (Double) u.getAttribute(mobilityMarker);
-				Double valueV = (Double) v.getAttribute(mobilityMarker);
-				deltaSpeed = Math.abs(valueU - valueV); 
-			} else if (mobilityMarker == "vehicleAngle") {
-				Double valueU = (Double) u.getAttribute(mobilityMarker);
-				Double valueV = (Double) v.getAttribute(mobilityMarker);
-				deltaAngle = Math.abs(valueU - valueV); 
-			
-			} else if (mobilityMarker == "vehicleLane") {
-				String valueU = (String) u.getAttribute(mobilityMarker);
-				String valueV = (String) v.getAttribute(mobilityMarker);
-			}
-			
-//			System.out.print(mobilityMarker +" " + ", u: " + valueU + ", v: " + valueV + " ");
-		}
-		Double maxDistance = 300.0;
-		mobilityWeight = maxDistance/(maxDistance + distance);
-		
-		return mobilityWeight;
 	}
 	
 	@Override

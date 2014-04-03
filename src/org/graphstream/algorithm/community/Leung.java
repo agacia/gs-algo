@@ -31,6 +31,7 @@
  */
 package org.graphstream.algorithm.community;
 
+import java.util.Dictionary;
 import java.util.HashMap;
 
 import org.graphstream.graph.Edge;
@@ -47,6 +48,7 @@ import org.graphstream.graph.Node;
  *            pp. 066 107+, 2009.
  * 
  * @author Guillaume-Jean Herbiet
+ * @modified Agata Grzybek
  * 
  */
 public class Leung extends EpidemicCommunityAlgorithm {
@@ -173,6 +175,24 @@ public class Leung extends EpidemicCommunityAlgorithm {
 		this.delta = delta;
 	}
 
+	/**
+	 * Sets the preference exponent and hop attenuation factor to the given
+	 * values.
+	 * 
+	 * @param m
+	 *            comparable function preference exponent value
+	 * @param delta
+	 *            hop attenuation factor value
+	 * @param weightMarker
+	 *            edge weight marker
+	 */
+	@Override
+	public void setParameters(Dictionary<String, Object> params) {
+		this.m = (Double) params.get("m");
+		this.delta = (Double) params.get("delta");
+		this.weightMarker = (String) params.get("weightMarker");
+	}
+	
 	@Override
 	public void computeNode(Node node) {
 		/*
@@ -180,18 +200,31 @@ public class Leung extends EpidemicCommunityAlgorithm {
 		 */
 		Object previousCommunity = node.getAttribute(marker);
 		Double previousScore = (Double) node.getAttribute(marker + ".score");
+		
+		/*
+		 * Added by Agata, to track stability (keep the previous community
+		 * when traveling without neighbors.
+		 */
+//		Integer degree = node.getEnteringEdgeSet().size();
+//		Integer previousDegree = degree;
+		
 		super.computeNode(node);
 
 		/*
 		 * Update the node label score
 		 */
 
-		// Handle first iteration
+		// Handle first iteration // originate new community
 		if (previousCommunity == null) {
 			previousCommunity = node.getAttribute(marker);
 			previousScore = (Double) node.getAttribute(marker + ".score");
-		}
-
+		} 
+//		else {
+//			previousDegree = (Integer) node.getAttribute("degree");
+//		}
+//		node.setAttribute("degree", degree);
+		
+		
 		/*
 		 * The node is the originator of the community and hasn't changed
 		 * community at this iteration (or we are at the first simulation step):
@@ -200,6 +233,16 @@ public class Leung extends EpidemicCommunityAlgorithm {
 		if ((node.getAttribute(marker).equals(previousCommunity))
 				&& (previousScore.equals(1.0)))
 			node.setAttribute(marker + ".score", 1.0);
+
+		/*
+		 * The node is the originator of the community and has no neighbours
+		 * (continue traveling without neighbors).
+		 * Keep the community id and the maximum score.
+		 */
+//		else if (previousDegree.equals(0) && degree.equals(0)) {
+//			node.setAttribute(marker, previousCommunity);
+//			node.setAttribute(marker + ".score", 1.0);
+//		}
 
 		/*
 		 * Otherwise search for the highest score amongst neighbors and reduce
@@ -217,15 +260,14 @@ public class Leung extends EpidemicCommunityAlgorithm {
 								+ ".score");
 				}
 			}
-			node.setAttribute(marker + ".score", maxLabelScore - delta);
-			// XXX maxLabelScore can be -inf when degree==0. 
-			// Shouldn't the node without neighbors originate a new community again?
-			if (maxLabelScore == Double.NEGATIVE_INFINITY) {
-				originateCommunity(node);
-				System.out.println("Should originate node but in fact the score was set to -inf");
-			}
-			else {
-				node.setAttribute(marker + ".score", maxLabelScore - delta);
+			/*
+			 *  Added by Agata
+			 *  If node disconnected from its neighbors, it has already originated community (in super.computeNode(node);
+			 *  The case when the node continues traveling without neighbors was handled earlier
+			 */
+			if (!maxLabelScore.equals(Double.NEGATIVE_INFINITY)) { 
+				node.setAttribute(marker + ".score", maxLabelScore - delta); // score indicates the distance from the originator, 
+				// if the originator of the community is the neighbour of the node, then the maxLabelScore is 1, so the node gets 1-delta
 			}
 
 		}
