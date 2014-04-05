@@ -58,41 +58,28 @@ Algorithm, Sink {
 	*/
 	protected Graph graph;
 
-	private static final Double STOP_SPEED = 1.0;
-//	private static final Integer CYCLE_TIME = 90;
-//	public static final Integer CYCLE_TIME = 60;
-//	public static final Integer CYCLE_TIME = 40;
-//	public static final Integer CYCLE_TIME = 30;
-	public static final Integer CYCLE_TIME = 10;
 	private static final Integer STOPS_NUMBER = 2;
+	private static final Integer CYCLE_TIME = 90;
+	private static final Double STOP_SPEED = 1.0;
 	
 	/**
 	 * Name of the marker that is used to store weight of links on the graph
 	 * that this algorithm is applied to.
 	 */
 	protected String weightMarker = "weight";
-
-	/**
-	 * Name of the marker that is used to store weight of links on the graph
-	 * that this algorithm is applied to.
-	 */
 	protected String speedMarker = "vehicleSpeed";
-	protected String avgSpeedMarker = "avgVehicleSpeed";
 	protected String dynamismMarker = "dynamism";
 	protected String timeMeanSpeedMarker = "timeMeanSpeed";
 	protected String speedHistoryMarker = "speedHistory";
 	protected String speedHistoryTimestampsMarker = "speedHistoryTimestamps";
 	protected String speedHistoryIndexMarker = "speedHistoryIndex";
 	protected String maxHistoryRecordsMarker = "maxHistoryRecords";
-	protected Integer speedHistoryLength = CYCLE_TIME;
-	/**
-	 * Name of the marker that is used to store weight of links on the graph
-	 * that this algorithm is applied to.
-	 */
 	protected String angleMarker = "vehicleAngle";
-
 	protected String laneMarker = "vehicleLane";
-	protected String posMarker = "vehiclePos";
+	
+	protected String speedType = "timemean"; // or 'instant' , 'spacetimemean'
+	protected Integer speedHistoryLength = 0;
+	
 
 	public CongestionMeasure() {
 		super();
@@ -122,32 +109,27 @@ Algorithm, Sink {
 	 * Sets the preference exponent and hop attenuation factor to the given
 	 * values.
 	 * 
-	 * @param speedMarker
-	 * @param angleMarker
-	 * @param avgSpeedMarker
-	 * @param weightMarker
-	 * @param posMarker
-	 * @param laneMarker
-	 * 
 	 */
 	public void setParameters(Dictionary<String, Object> params) {
 		this.speedMarker = (String) params.get("speedMarker");
-		this.posMarker = (String) params.get("posMarker");
 		this.laneMarker = (String) params.get("laneMarker");
 		this.weightMarker = (String) params.get("weightMarker");
 		this.dynamismMarker = (String) params.get("dynamismMarker");
-		if (params.get("avgSpeedMarker") != null) {
-			this.avgSpeedMarker = (String) params.get("avgSpeedMarker");
-		}
 		if (params.get("angleMarker") != null) {
 			this.angleMarker = (String) params.get("angleMarker");
 		}
 		if (params.get("speedHistoryLength") != null) {
 			this.speedHistoryLength = (Integer) params.get("speedHistoryLength");
 		}
+		if (params.get("speedType") != null) {
+			this.speedType = (String) params.get("speedType");
+		}
+		if (params.get("timeMeanSpeedMarker") != null) {
+			this.timeMeanSpeedMarker = (String) params.get("timeMeanSpeedMarker");
+		}
+		
 	}
 	
-
 	/**
 	 * Random number generator used to shuffle the nodes. Shall be used by all
 	 * inherited algorithms for random number generation
@@ -176,10 +158,8 @@ Algorithm, Sink {
 	
 	public void computeNode(Node node) {
 		setNumberOfStopsOnALane(node);
-//		setAverageLinkSpeed(node);
 		setAverageSpeed(node);
-		setDynamism(node, this.avgSpeedMarker, this.dynamismMarker);
-		
+		setDynamism(node, this.timeMeanSpeedMarker, this.dynamismMarker);
 	}
 	
 	public Double getInstantaneousSpeed(Node node) {
@@ -190,15 +170,21 @@ Algorithm, Sink {
 		return speed;
 	}
 	
-	protected void setLinkAverageSpeed(Node node) {
-		Double spaceMeanSpeed = calculateSpaceMeanSpeed(node);
-		addSpeedToSpeedHistory(node, spaceMeanSpeed);
-		calculateAndSetTimeMeanSpeed(node);
+	public String getSpeedType() {
+		return speedType;
 	}
 	
 	protected void setAverageSpeed(Node node) {
-		Double speed = getInstantaneousSpeed(node);
-		addSpeedToHistory(node, speed);
+		if (speedType.equals("timemean") || speedType.equals("instant")) {
+			Double speed = getInstantaneousSpeed(node);
+			addSpeedToHistory(node, speed);
+			//System.out.println("build history of instant speeds");
+		}
+		else if (speedType.equals("spacetimemean")) {
+			Double spaceMeanSpeed = calculateSpaceMeanSpeed(node);
+			addSpeedToLinkSpeedHistory(node, spaceMeanSpeed);
+//			System.out.println("build history of spaceMeanSpeed");
+		}
 		calculateAndSetTimeMeanSpeed(node);
 	}
 	
@@ -206,12 +192,22 @@ Algorithm, Sink {
 	    public int value;
 	}
 	
+	/***
+	 * Adds current instant speed of the vehicle to its speed history.
+	 * Initializes the history with zeros if the vehicle has started traveling
+	 * Sets 
+	 * - speedHistoryMarker with the array of historical records
+	 * - speedHistoryTimestampsMarker with the array of historical timestamps
+	 * - speedHistoryIndexMarker - current index in historical arrays
+	 * - maxHistoryRecordsMarker -1 because the vehicle always uses its own history (never copies from a neighbor)
+	 * @param node
+	 * @param speed
+	 */
 	public void addSpeedToHistory(Node node, Double speed) {
-
 		Double[] history = new Double[speedHistoryLength];
 		Double[] timestamps = new Double[speedHistoryLength];
 		Integer speedHistoryIndex = 0;
-		
+		// initialise if just started traveling
 		if (!node.hasAttribute(speedHistoryMarker)) {
 			for (int i = 0; i < speedHistoryLength; ++i) {
 				history[i] = 0.0;
@@ -223,21 +219,32 @@ Algorithm, Sink {
 			timestamps = (Double[])node.getAttribute(speedHistoryTimestampsMarker);
 			speedHistoryIndex = (Integer)node.getAttribute(speedHistoryIndexMarker);
 		}
-		
 		Double now = graph.getStep();
 		// add the value to the history 
-		//System.out.println(node.getId() + " writing to history its own speed at index " + speedHistoryIndex%speedHistoryLength + ", spaceMeanSpeed: " + spaceMeanSpeed + ", timestamp: " +  graph.getStep() );
 		history[speedHistoryIndex%speedHistoryLength] = speed;
-		timestamps[speedHistoryIndex%speedHistoryLength] = graph.getStep();
+		timestamps[speedHistoryIndex%speedHistoryLength] = now;
+//		System.out.println("Writing to history node " + node.getId() + " time/speed: " + now + " " + speed );
 		speedHistoryIndex++;
-		// save on node
+		// save attributes on node
 		node.setAttribute(speedHistoryMarker, (Object[])history);
 		node.setAttribute(speedHistoryTimestampsMarker, (Object[])timestamps);
 		node.setAttribute(speedHistoryIndexMarker, speedHistoryIndex);	
-		
+		node.setAttribute(maxHistoryRecordsMarker, -1);
 	}
 	
-	public void addSpeedToSpeedHistory(Node node, Double spaceMeanSpeed) {
+	/***
+	 * Adds the space-mean speed of the vehicle to its speed history. The speed history is relevant only on a link
+	 * Copies a neighbor's history whenever a vehicle changes link or starts traveling  (from a neighbor with the longest history) is possible
+	 * Initializes the history with zeros if no neighbors on the link
+	 * Sets 
+	 * - speedHistoryMarker with the array of historical records
+	 * - speedHistoryTimestampsMarker with the array of historical timestamps
+	 * - speedHistoryIndexMarker - current index in historical arrays
+	 * - maxHistoryRecordsMarker - 0 if vehicle restarts history and fills it with all 0, > 0 if a vehicle copies historical speeds from a neighbor, -1 if vehicle used its own historical speeds
+	 * @param node
+	 * @param speed
+	 */
+	public void addSpeedToLinkSpeedHistory(Node node, Double spaceMeanSpeed) {
 		Double[] history = new Double[speedHistoryLength];
 		Double[] timestamps = new Double[speedHistoryLength];
 		Double now = graph.getStep();
@@ -256,51 +263,22 @@ Algorithm, Sink {
 		
 		// get speed history from a neighbor
 		// if node just started traveling  or if node changed a link
-//		if (currentLane.equals("616")) {
-//			System.out.print(graph.getStep() + "\taddSpeedToSpeedHistory\tveh_id\t" + node.getId() + "\tlane\t" + currentLane + "\tprevious lane\t" + previousLane + "\tcopies?\t" + (!node.hasAttribute(speedHistoryMarker) || !previousLane.equals(currentLane)) + "\this own history\t" + (node.hasAttribute(speedHistoryMarker) && previousLane.equals(currentLane)));
-//		}
 		if (!node.hasAttribute(speedHistoryMarker) || !previousLane.equals(currentLane)) {
-//			if (node.getId().equals("41427")) {
-//				System.out.println("start travel or change link, neighbors: " + node.getEnteringEdgeSet().size() + ", ");	
-//			}
-			
 			Node maxHistoryNode = getMaxHistoryNode(node, currentLane, maxHistoryRecords);
 			// copy the history records from the max node
 			if (maxHistoryNode != null) {
-//				System.out.println("node " + node.getId() + " copying " + maxHistoryRecords + " from node " + maxHistoryNode.getId());
 				Double[] maxHistory = (Double[])maxHistoryNode.getAttribute(speedHistoryMarker);
-//				if (currentLane.equals("616")) {
-//					System.out.print("\tmaxNode:\t" + maxHistoryNode.getId() + "\t");	
-//				}
-//				if (node.getId().equals("41427")) {
-//					System.out.println(node.getId() + " copied from a neighbor " + maxHistoryNode.getId() + " " + maxHistoryRecords + ": ");	
-//				}
 				int i = 0;
 				Double[] maxHistoryTimestamps = (Double[])maxHistoryNode.getAttribute(speedHistoryTimestampsMarker);
 				int speedHistoryIndexNeighbor = (Integer)maxHistoryNode.getAttribute(speedHistoryIndexMarker);
 				for (int j = (speedHistoryIndexNeighbor); j<speedHistoryLength+speedHistoryIndexNeighbor; j++) {
-					//System.out.println("node " + node.getId() + " j: " + j%speedHistoryLength); 
 					if (maxHistoryTimestamps[j%speedHistoryLength]!=0.0 && (now-maxHistoryTimestamps[j%speedHistoryLength]) < speedHistoryLength && !now.equals(maxHistoryTimestamps[j%speedHistoryLength]))  {
 						history[i] = maxHistory[j%speedHistoryLength];
 						timestamps[i] = maxHistoryTimestamps[j%speedHistoryLength];
-//						System.out.println("maxHistoryRecords: " + maxHistoryRecords + " copying history for i" + i + ": " + ", j: " + (j%speedHistoryLength) + " " + maxHistory[j%speedHistoryLength] + ", timestamp: " + maxHistoryTimestamps[j%speedHistoryLength]);
-//						if (currentLane.equals("616")) {
-//							System.out.print("\t" + timestamps[i] + "\t" + df.format(history[i]));	
-//						}
-//						if (node.getId().equals("41427")) {
-//							System.out.print(" " + timestamps[i] + "," + history[i]);	
-//						}
 						i++;
 					}
 				}
 				speedHistoryIndex = i;
-//				if (currentLane.equals("616")) {
-//					System.out.println();
-//				}
-//				if (node.getId().equals("41427")) {
-//					System.out.println(", speedHistoryIndex: " + speedHistoryIndex + ", neighbors: " + node.getEnteringEdgeSet().size());
-//				}
-				
 			} else {
 				maxHistoryRecords.value = 0;
 			}
@@ -359,6 +337,11 @@ Algorithm, Sink {
 		return maxHistoryNode;
 	}
 	
+	/***
+	 * Calculates the average speed of all neighbors traveling on the same links as the node
+	 * @param node
+	 * @return the average speed of all neighbors traveling on the same links as the node
+	 */
 	public Double calculateSpaceMeanSpeed(Node node) {
 		Double spaceMeanSpeed = 0.0;
 		String myLane = "";
@@ -366,9 +349,6 @@ Algorithm, Sink {
 		if (node.hasAttribute(laneMarker) && node.hasAttribute(speedMarker)) {
 			ArrayList<Double> speeds = new ArrayList<Double>();
 			myLane = (String) (node.getAttribute(laneMarker).toString());
-			if (myLane.equals("616")) {
-				System.out.print(graph.getStep() + "\tcalculateSpaceMeanSpeed\tveh_id\t" + node.getId() + "\tlane\t" + myLane + "\tspeed\t" + df.format((Double)node.getAttribute(speedMarker)) + "\tneigh:\t");
-			}
 			Double mySpeed = (Double)node.getAttribute(speedMarker);
 			//Iterate over the nodes that this node "hears"
 			for (Edge e : node.getEnteringEdgeSet()) {
@@ -377,25 +357,18 @@ Algorithm, Sink {
 				if (neighbor.hasAttribute(laneMarker)) {
 					String neighborLane = (String) (neighbor.getAttribute(laneMarker).toString());
 					if (neighborLane.equals(myLane)) {
-						if (myLane.equals("616")) {
-							System.out.print("\t" + neighbor.getId() + "\t" + df.format((Double)neighbor.getAttribute(speedMarker)));
-						}
 						// add neighbor's speed to speeds 
 						Double neighborSpeed = (Double)neighbor.getAttribute(speedMarker);
 						speeds.add(neighborSpeed);
 					}
 				}
 			}
-			
 			// calculte mean
 			Double sumSpeed = mySpeed;
 			for (int i = 0; i < speeds.size(); ++i) {
 				sumSpeed += speeds.get(i);
 			}
 			spaceMeanSpeed = sumSpeed / (1+speeds.size());
-			if (myLane.equals("616")) {
-				System.out.println("\tspaceMeanSpeed\t" + df.format(spaceMeanSpeed));
-			}
 		}
 		return spaceMeanSpeed;
 	}
@@ -408,28 +381,19 @@ Algorithm, Sink {
 		Double[] timestamps = (Double[])node.getAttribute(speedHistoryTimestampsMarker);
 		Double now = graph.getStep();
 		DecimalFormat df = new DecimalFormat("##.##");
-		String myLane = (String) (node.getAttribute(laneMarker).toString());
-//		if (myLane.equals("616")) {
-//			System.out.print(graph.getStep() + "\tcalculateAndSetTimeMeanSpeed\tveh_id\t" + node.getId() + "\tlane\t" + myLane + "\tspeed\t" + df.format((Double)node.getAttribute(speedMarker)) + "\tneigh:\t");
-//		}
-//		System.out.print(graph.getStep() + "\tcalculateAndSetTimeMeanSpeed\tveh_id\t" + node.getId() + "\tspeed\t" + df.format((Double)node.getAttribute(speedMarker)) + "\thistory:\t");
+//		System.out.println("timestamps node " + node.getId() + " ");
 		for (int i = 0; i < timestamps.length; ++i) {
+//			System.out.print("\t"+timestamps[i]);
 			// use for calculation of the time average the seconds from the whole cycle 
 			if (timestamps[i]!=0.0 && (now-timestamps[i]) <= speedHistoryLength) {
 				sumSpeed += speeds[i];
 				sumNonZeroCount ++;
-//				if (myLane.equals("616")) {
-//				System.out.print("\t" + timestamps[i] + "\t" + df.format(speeds[i]));	
-//				}
 			}
 		}
 		if (sumNonZeroCount > 0) {
 			timeMeanSpeed = sumSpeed / sumNonZeroCount;
 		}
-		
-//		if (myLane.equals("616")) {
-//			System.out.println("\ttimeMeanSpeed\t" + timeMeanSpeed + "\ttimeMeanSpeedMarker.count: " + sumNonZeroCount);
-//		}
+//		System.out.println(" timeMeanSpeed " + timeMeanSpeed + " historical records: " + timestamps.length + ", nonzero: " + sumNonZeroCount);
 		node.setAttribute(timeMeanSpeedMarker, timeMeanSpeed);
 		node.setAttribute(timeMeanSpeedMarker+".count", sumNonZeroCount);
 		return timeMeanSpeed;
@@ -464,8 +428,6 @@ Algorithm, Sink {
 			node.addAttribute(this.laneMarker + ".stopTime", 0.0);
 		}
 		String currentLane = (String) node.getAttribute(this.laneMarker + ".current").toString();
-//		Integer laneStops = (Integer) node.getAttribute(this.laneMarker + ".stops");
-//		Integer laneProbes = (Integer) node.getAttribute(this.laneMarker + ".probes");
 		if (!lane.equals(currentLane)) {
 			// new lane 
 			node.setAttribute(this.laneMarker + ".previous", currentLane);
@@ -473,9 +435,6 @@ Algorithm, Sink {
 			node.setAttribute(this.laneMarker + ".stops", 0);
 			node.setAttribute(this.laneMarker + ".probes", 0);
 			node.setAttribute(this.laneMarker + ".stopTime", 0.0);
-//			if (node.getId().equals("41427")) {
-//				System.out.println("node " + node.getId() + " changed from " + currentLane+ " to " + lane + "=="+ node.getAttribute(this.laneMarker + ".current").toString() );
-//			}
 		}
 		Integer probesAtCurrentLane = (Integer)node.getAttribute(this.laneMarker + ".probes");
 		node.setAttribute(this.laneMarker + ".probes", ++probesAtCurrentLane);
@@ -490,11 +449,8 @@ Algorithm, Sink {
 			if (stopTime==0.0 || (currentStep-stopTime) > CYCLE_TIME) {
 				node.setAttribute(this.laneMarker + ".stopTime", currentStep);
 				node.setAttribute(this.laneMarker + ".stops", ++stopsAtCurrentLane);
-//				System.out.println(node.getId() + "\tlane\t" + lane + "\tcurrent speed\t" + speed + " STOPPED at " + currentStep + "-" + stopTime + ", stopsAtCurrentLane:" + stopsAtCurrentLane);	
 			}
 		}
-		
-//		System.out.println(graph.getStep() + " " + node.getId() + "\tlane\t" + lane + "\tcurrent speed\t" + speed);	
 	}
 
 	public void graphAttributeAdded(String sourceId, long timeId,

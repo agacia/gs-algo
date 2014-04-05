@@ -102,9 +102,6 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 		 */
 		Object maxCommunity = null;
 		Double maxScore = Double.NEGATIVE_INFINITY;
-
-		// search for community with 0 similarity
-		ArrayList<Object> zeroSimilarityCommunityIds = new ArrayList<Object>();
 		
 		TreeMap<Object, Double> scores = new TreeMap<Object, Double>(communityScores);
 		for (Object c : scores.keySet()) {
@@ -112,9 +109,6 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 			if (s > maxScore || (s == maxScore && rng.nextDouble() >= 0.5)) {
 				maxCommunity = c;
 				maxScore = s;
-			}
-			if (s.equals(0.0)) {
-				zeroSimilarityCommunityIds.add(c);
 			}
 		}
 		
@@ -137,17 +131,9 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 //				System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
 //						+ " with negative mobility measure (" + maxScore + ")." 
 //						+ " Should originate ? Current com " + node.getAttribute(marker) + "," + node.getAttribute(marker+".score"));
-				
 			}
 		}
 		else {
-			// if max community is also a zero, one of the communities has to disjoin
-			for (Object com : zeroSimilarityCommunityIds) {
-				System.out.println("Checking if conflict node " + node.getId() + " has maxScore with " + maxCommunity + " and also 0 score with " + com);
-				if (com.equals(maxCommunity)) {
-					System.err.println("Conflict node " + node.getId() + " has maxScore " + maxScore +  " with " + maxCommunity + " and also 0 score ");
-				}
-			}
 			node.setAttribute(marker, maxCommunity);
 			node.setAttribute(marker + ".score", maxScore);
 		}

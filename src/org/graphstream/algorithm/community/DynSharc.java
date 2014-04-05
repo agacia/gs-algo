@@ -100,11 +100,7 @@ public class DynSharc extends NewSawSharc {
 		}
 	}
 	
-	public void setEmergenceMode(Node u) {
-		if (u.hasAttribute(marker + ".emergence")) {
-			
-		}
-	}
+	
 	
 	public void updateFreshnessAndStalling(Node u) {
 		Object previousCommunity = u.getAttribute(marker);
@@ -195,7 +191,6 @@ public class DynSharc extends NewSawSharc {
 		 */
 		setBreakMode(u);
 		
-		setEmergenceMode(u);
 	}
 
 	@Override

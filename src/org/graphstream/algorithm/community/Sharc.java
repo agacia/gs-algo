@@ -160,9 +160,14 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 				similarity += 1.0;
 		}
 
-		if (a.getDegree() == 0 && b.getDegree() == 0)
+		if (a.getDegree() == 0 && b.getDegree() == 0) {
 			return 0.0;
-		else
+		}
+		else if (a.getDegree() == 1) {
+			return 1.0;
+		}
+		else {
 			return 1 - (similarity / (a.getDegree() + b.getDegree()));
+		}
 	}
 }

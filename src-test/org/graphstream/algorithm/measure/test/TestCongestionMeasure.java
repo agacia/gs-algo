@@ -68,7 +68,7 @@ public class TestCongestionMeasure {
 		maxHistoryRecordsMarker = "maxHistoryRecords";
 		timeMeanSpeedMarker = "timeMeanSpeed";
 		congestionMeasure = new CongestionMeasure();
-		speedHistoryLength = CongestionMeasure.CYCLE_TIME;
+		speedHistoryLength = 10;
 		
 	}
 

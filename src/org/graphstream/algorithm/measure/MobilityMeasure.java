@@ -172,7 +172,7 @@ public abstract class MobilityMeasure extends SinkAdapter implements
 	
 	public static Double calculateDegreeOfCongestionDependence(Double speedU, Double speedV, Double angleU, Double angleV) {
 		// if speedU is not within the same range as speedV return 0
-		if ((speedU <= congestionSpeedThreshold && speedV <= speedV ) || (speedU > congestionSpeedThreshold && speedV > congestionSpeedThreshold)) {
+		if ((speedU <= congestionSpeedThreshold && speedV <= congestionSpeedThreshold ) || (speedU > congestionSpeedThreshold && speedV > congestionSpeedThreshold)) {
 			return  calculateCos(angleU, angleV) * calculateSpeedRatio(speedU, speedV);
 		}
 		return 0.0;

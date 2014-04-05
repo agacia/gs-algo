@@ -4,6 +4,7 @@
 package org.graphstream.algorithm.community;
 
 import java.io.BufferedWriter;
+import java.text.DecimalFormat;
 import java.util.Dictionary;
 import java.util.HashMap;
 
@@ -42,7 +43,6 @@ public class MobileSandSharc extends DynSharc {
 		MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
 	}
 	
-	
 	/**
 	 * @param graph
 	 * @param marker
@@ -64,32 +64,16 @@ public class MobileSandSharc extends DynSharc {
 		super(graph, marker, stallingThreshold, breakPeriod);
 		MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
 	}
-	
-	/**
-	 * A weight for mobility similarity.
-	 * Indicates how important is mobility similarity in calculation of the final similarity.
-	 * The final similarity is computes as: mobilityWeight * mobilitySimilarity + (1-mobilityWeight) * neighborhoodSimilarity
-	 */
-	private Double mobilityWeight = 0.5;
 
 	/**
 	 * Markers used to calculate mobility similarity. 
 	 */
 	protected String speedMarker = "speed";
-	protected String avgSpeedMarker = "vehicleAvgSpeed";
 	protected String angleMarker = "angle";
 	protected String dynamismMarker = "dynamism";
 	protected String timeMeanSpeedMarker = "timeMeanSpeed";
-	/**
-	 * A threshold value for mobility similarity between 0 and 1.
-	 * If mobility similarity is lower than threshold, the final similarity is set to 0 
-	 */
-	private Double mobilitySimilarityThreshold = 0.5; 
-	
-	/**
-	 * Maximum speed
-	 */
-	private Double maxSpeed = 90.0; 
+
+	protected String speedType = "timemean"; // or 'instant' , 'spacetimemean'
 	
 	/**
 	 * @param graph
@@ -109,15 +93,14 @@ public class MobileSandSharc extends DynSharc {
 	
 	@Override
 	public void setParameters(Dictionary<String, Object> params) {
-		this.mobilityWeight = (Double) params.get("mobilityWeight");
 		this.weightMarker = (String) params.get("weightMarker");
 		this.speedMarker = (String) params.get("speedMarker");
-		this.avgSpeedMarker = (String) params.get("avgSpeedMarker");
 		this.timeMeanSpeedMarker = (String) params.get("timeMeanSpeedMarker");
 		this.angleMarker = (String) params.get("angleMarker");
-		this.mobilitySimilarityThreshold = (Double) params.get("mobilitySimilarityThreshold");
-		this.maxSpeed = (Double) params.get("maxSpeed");
 		MobilityMeasure.setCongestionSpeedThreshold( (Double) params.get("congestionSpeedThreshold"));
+		if (params.get("speedType") != null) {
+			this.speedType = (String) params.get("speedType");
+		}
 	}
 	
 	protected void updateOriginator(Node u, Object previousCommunity) {
@@ -126,7 +109,6 @@ public class MobileSandSharc extends DynSharc {
 		 */
 		if (u.hasAttribute(marker + ".originator")
 				&& !u.hasAttribute(marker + ".new_originator")) {
-
 			/*
 			 * Originator stayed in the same community: Make the originator
 			 * token wander using a "local optimum favored" weighted random
@@ -227,105 +209,118 @@ public class MobileSandSharc extends DynSharc {
 			u.removeAttribute(marker + ".new_originator");
 	}
 
-	/**
-	 * Compute the scores for all relevant communities for the selected node
-	 * using the SHARC algorithm
-	 * 
-	 * @param u
-	 *            Node for which the computation is performed
-	 * @complexity O(DELTA^2) where DELTA is the average node degree in the
-	 *             network
-	 */
-	@Override
-	protected void communityScores(Node u) {
-		/*
-		 * Compute the "simple" count of received messages for each community.
-		 * This will be used as a fallback metric if the maximum "Sharc" score
-		 * is 0, meaning there is no preferred community.
-		 */
-		super.communityScores(u);
-		communityCounts = communityScores;
-		System.out.println("in MobileSandSharc community scores ");
-		/*
-		 * Reset the scores for each communities
-		 */
-		communityScores = new HashMap<Object, Double>();
+//	/**
+//	 * Compute the scores for all relevant communities for the selected node
+//	 * using the SHARC algorithm
+//	 * 
+//	 * @param u
+//	 *            Node for which the computation is performed
+//	 * @complexity O(DELTA^2) where DELTA is the average node degree in the
+//	 *             network
+//	 */
+//	@Override
+//	protected void communityScores(Node u) {
+//		/*
+//		 * Compute the "simple" count of received messages for each community.
+//		 * This will be used as a fallback metric if the maximum "Sharc" score
+//		 * is 0, meaning there is no preferred community.
+//		 */
+//		super.communityScores(u);
+//		communityCounts = communityScores;
+//		System.out.println("in MobileSandSharc community scores ");
+//		/*
+//		 * Reset the scores for each communities
+//		 */
+//		communityScores = new HashMap<Object, Double>();
+//
+//		/*
+//		 * Iterate over the nodes that this node "hears"
+//		 */
+//		System.out.print("node " + u.getId() + ", neighbors: ");
+//		for (Edge e : u.getEnteringEdgeSet()) {
+//			Node v = e.getOpposite(u);
+//			/*
+//			 * Update the count for this community
+//			 */
+//			if (v.hasAttribute(marker)) {
+//				System.out.print("\t" + v.getId() + " " + v.getAttribute(marker));
+//				// Update score
+//				Double sim = similarity(u, v);
+//				System.out.println("calculate  scores " + ", sim: " + sim);
+//				String vComId = v.getAttribute(marker);
+//				if (communityScores.get(vComId) == null)
+//					communityScores.put(vComId, sim);
+//				else {
+//					Double currentScore = communityScores.get(vComId);
+//					// check if a node u has sim with some neighbors of the same community zero and non-zero -> then this community should be devided  
+//					if (currentScore != 0 && sim == 0) {
+//						
+//					}
+//					communityScores.put(vComId, currentScore + sim);
+//				}
+//			}
+//		}
+//		System.out.println();
+//	}
+	
+	public void setEmergenceMode(Node u) {
+		// perform emergence 
+//		if (u.hasAttribute(marker + ".emergence")) {
+//			
+//		}
+		// check if emergence of a new community is needed 
+		// if the node has similarities with other nodes of his community equal zero, then he should originate new community 
 
-		/*
-		 * Iterate over the nodes that this node "hears"
-		 */
+		DecimalFormat df = new DecimalFormat("##.##");
+//		System.out.print("Step " + graph.getStep() + ", node " + u.getId() + ", com: " + u.getAttribute(marker) + ", checks neighbors: ");
 		for (Edge e : u.getEnteringEdgeSet()) {
 			Node v = e.getOpposite(u);
-			/*
-			 * Update the count for this community
-			 */
-			if (v.hasAttribute(marker)) {
-				// Update score
-				if (communityScores.get(v.getAttribute(marker)) == null)
-					communityScores.put(v.getAttribute(marker),
-							similarity(u, v));
-				else
-					communityScores.put(v.getAttribute(marker),
-							communityScores.get(v.getAttribute(marker))
-									+ similarity(u, v));
+			if (v.hasAttribute(marker) && v.getAttribute(marker)==u.getAttribute(marker)) {
+				Double sim = similarity(u, v);
+//				System.out.print("\t" + v.getId() + ",com:" + v.getAttribute(marker) + ",sim: " +  df.format(sim));
+				if (sim.equals(new Double(0.0))) {
+					Community previousCom = (Community)u.getAttribute(marker);
+					originateCommunity(u);
+					System.out.println("Node " + u.getId() + " emerges a new community " + u.getAttribute(marker) + " from " + previousCom.getId());
+					break;
+				}
 			}
 		}
+//		System.out.println();
 	}
 	
 	@Override
 	public void computeNode(Node node) {
-//		if (isValidForAssignment(node, this.avgSpeedMarker, 0.0)) {
 		super.computeNode(node);
-//		}
+
+		setEmergenceMode(node);
 	}
-	
-	protected boolean isValidForAssignment(Node node, String marker, Double threshold) {
-		if (!node.hasAttribute(marker)) {
-			return true;
-		}
-		Double avgSpeed = (Double) node.getAttribute(marker);
-		return !(avgSpeed < 0);
-	}
-	
-	protected Double dynamicSimilarity(Node a, Node b) {
-		double dynSim = 0;
-		// TODO
-		return dynSim;		
-	}
-	
+
 	
 	protected Double mobilitySimilarity(Node a, Node b) {
-		
-		// get average speed
-//		Double speedA = MobilityMeasure.getAvgSpeed(a, speedMarker, avgSpeedMarker);
-//		Double speedB = MobilityMeasure.getAvgSpeed(b, speedMarker, avgSpeedMarker);
-
+		Double speedA = 0.0;
+		Double speedB = 0.0;
 		// get instantaneouos speed
-		Double speedA = MobilityMeasure.getAvgSpeed(a, speedMarker, null);
-		Double speedB = MobilityMeasure.getAvgSpeed(b, speedMarker, null);	
-//		System.out.println("speed " + speedA);
-//		 get time mean speed
-//		if (a.hasAttribute(timeMeanSpeedMarker)) {
-//			speedA = (Double)a.getAttribute(timeMeanSpeedMarker);
-////			System.out.println("timeMeanSpeedMarker " + speedA);	
-//		}
-//		if (b.hasAttribute(timeMeanSpeedMarker)) {
-//			speedB = (Double)b.getAttribute(timeMeanSpeedMarker);	
-//		}
-//		if (a.getId().equals("41427")) {
-//			System.out.println("inst speed " + MobilityMeasure.getAvgSpeed(a, speedMarker, null) + ", meanSPeed " + speedA );
-//		}
+		if (this.speedType.equals("instant")) {
+			speedA = MobilityMeasure.getAvgSpeed(a, speedMarker, null);
+			speedB = MobilityMeasure.getAvgSpeed(b, speedMarker, null);
+//			System.out.println("use instant speed "  + a.getId() + " " + speedMarker + " " + speedA);	
+		}
+		// get mean speed
+		else if (speedType.equals("timemean") || speedType.equals("spacetimemean")) {
+			if (a.hasAttribute(timeMeanSpeedMarker)) {
+				speedA = (Double)a.getAttribute(timeMeanSpeedMarker);
+//				System.out.println("use timeMeanSpeedMarker "  + a.getId() + " " +  timeMeanSpeedMarker + " "  + speedA);	
+			}
+			if (b.hasAttribute(timeMeanSpeedMarker)) {
+				speedB = (Double)b.getAttribute(timeMeanSpeedMarker);	
+			}
+		}
 		// get angle
 		Double angleA = MobilityMeasure.getValue(a, angleMarker);
 		Double angleB = MobilityMeasure.getValue(b, angleMarker);
-		
-	//	Double dynamismA = MobilityMeasure.getValue(a, dynamismMarker);
-	//	Double dynamismB = MobilityMeasure.getValue(b, dynamismMarker);
-	//	Double speedRatio = MobilityMeasure.calculateSpeedRatio(speedA, speedB);
-	//	Double cos = MobilityMeasure.calculateCos(angleA, angleB);
-	//	Double dsd = MobilityMeasure.calculateDegreeOfSpatialDependence(speedA, speedB, angleA, angleB);
-		
 		Double mobSim = MobilityMeasure.calculateDegreeOfCongestionDependence(speedA, speedB, angleA, angleB);
+//		System.out.println("mob sim " + a.getId() + "-" + b.getId() + "=" + mobSim);	
 		return mobSim;
 	}
 	
@@ -339,7 +334,6 @@ public class MobileSandSharc extends DynSharc {
 			return;
 		}
 		a.<Edge>getEdgeFrom(b.getId()).setAttribute(weightMarker, weight);
-//		System.out.println("weightmarker " + weightMarker + " weight of node " + a.getId() + " and " + b.getId() + " = " + weight);
 	}
 	
 	/**
@@ -356,51 +350,11 @@ public class MobileSandSharc extends DynSharc {
 	 */
 	@Override
 	protected Double similarity(Node a, Node b) {
-		
 		setStabilityWeight(a, b);
-		
 		Double sim = super.similarity(a, b);
-//		sim = nSim;
-
-			
-//		if (mobSim == 0.0) { // should never happen 
-//			System.err.println("mobsim is 0");
-//		}
-//		if (mobSim < mobilitySimilarityThreshold) {
-////			System.out.println(a.getId() + " reseting sim " + mobSim + " (mobilitySimilarityThreshold " + mobilitySimilarityThreshold + ")");
-//			return 0.0;
-//		}
-		//
-//		sim = nSim * mobSim;
-//		sim = nSim;
-//		sim = 0.5*nSim + 0.5*mobSim; 
-//		else if (mobSim < mobilitySimilarityThreshold) {
-//			sim = 0.0;
-//			System.out.println(a.getId() + " reseting mobSim " + mobSim);
-//		}
-//		else {
-//			// dynamicly compute mobilityWeigh dependent on mobility dynamics
-//			Double dynamicMobilityWeight = getDynamicMobilityWeight(a);
-//			sim = (1-dynamicMobilityWeight) * nSim + dynamicMobilityWeight * mobSim;	
-////			System.out.println(a.getId() + "dynamic mob weight " + dynamicMobilityWeight + " " + maxSpeed);
-//	//		sim = nSim * mobSim;
-//	//		sim = nSim;
-//		}
-//		System.out.println(a.getId() + " " + b.getId() + " " + "sim: " + sim + "nSim: " + nSim + " mSim: " + mobSim + ", mobilityWeight:" + mobilityWeight + ", weightMarker: " + weightMarker + ", speedMarker: " + speedMarker + ", angleMarker:"+angleMarker);
+//		System.out.println("nei sim " + a.getId() + "-" + b.getId() + "=" + sim);	
 		return sim;
 	}
 
 	
-	protected Double getDynamicMobilityWeight(Node a) {
-		Double dynamicMobilityWeight = 0.0;
-		String speedMarker = "vehicleAvgSpeed";
-		if (a.hasAttribute(speedMarker)) {
-			Double speed = (Double) a.getAttribute(speedMarker);
-			dynamicMobilityWeight = speed / maxSpeed;
-			if (dynamicMobilityWeight > 1) {
-				dynamicMobilityWeight = 1.0;
-			}
-		}
-		return dynamicMobilityWeight;
-	}
 }

@@ -120,16 +120,19 @@ public class NewSawSharc extends Sharc {
 	@Override
 	protected Double similarity(Node a, Node b) {
 		Double sim;
-		if (maxWeight == Double.NEGATIVE_INFINITY || maxWeight == 0.0) {
+		// no neighbors or no weight - process normal neighorhood similarity (0 if no common edges, 1 if one neighbor only) 
+		if (maxWeight == Double.NEGATIVE_INFINITY) {
 			sim = super.similarity(a, b);
 		}
-		else {
-			sim = super.similarity(a, b)
-					* (getWeightInLinkFrom(a, b) / maxWeight);
-			
+		// if there is no neighbor with weight > 0
+		else if (maxWeight == 0.0) {
+			sim = 0.0;
+//			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ sim + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
 		}
-//		 System.out.println(a.getId() + " " + b.getId() + " " + "sim: "
-//		 + super.similarity(a, b) + " wsim: " + sim);
+		else {
+			sim = super.similarity(a, b) * (getWeightInLinkFrom(a, b) / maxWeight);
+//			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ super.similarity(a, b) + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
+		}
 		return sim;
 	}
 
@@ -140,6 +143,7 @@ public class NewSawSharc extends Sharc {
 			Double weight = getWeightInLinkFrom(u, e.getOpposite(u));
 			if (weight > maxWeight) {
 				maxWeight = weight;
+//				System.out.println("Setting maxweight: " + maxWeight);
 			}
 		}
 	}

@@ -1,0 +1,17 @@
+DGS004
+vanet 0 0
+st 1.0
+an 1 x=1326.5 y=1003.47591656 vehicleAngle=0.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+an 2 x=1326.5 y=1003.47591656 vehicleAngle=0.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+ae "1-2" 1 2 weight=270.645949912
+st 2.0
+cn 1 x=1326.5 y=1003.47591656 vehicleAngle=0.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+cn 2 x=1326.5 y=1003.47591656 vehicleAngle=0.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+st 3.0
+cn 1 x=1326.5 y=1003.47591656 vehicleAngle=0.0 vehiclePos=113.475916562 vehicleSpeed=1.0 vehicleLane="1"
+cn 2 x=1326.5 y=1003.47591656 vehicleAngle=0.0 vehiclePos=113.475916562 vehicleSpeed=10.0 vehicleLane="1"
+st 3.0
+st 0.4
+st 0.5
+st 0.6
+st 0.7
