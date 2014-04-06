@@ -91,7 +91,7 @@ public class TestMobileSandSharc {
 //		String speedType = "timemean";
 //		String speedType = "spacetimemean";
 		speedHistoryLength = 10;
-		Double congestionSpeedThreshold = 5.0;
+		Double congestionSpeedThreshold = 9.0;
 //		graphfilename = "data/Kirchberg-accident-900-50-50-100PR.dgs";
 		graphfilename= "data/TestMobileSandSharc.dgs";
 		params = new Hashtable<String, Object>();
@@ -203,9 +203,11 @@ public class TestMobileSandSharc {
 			previousCommunityNumber = communityNumber;			
 			communityNumber = comDist.number();
 			double step = g.getStep();
-			System.out.println("Step " + step + ", previousCommunityNumber " + previousCommunityNumber + ", communityNumber " + communityNumber);
-			if (step==5.0) {
-				assertTrue("Step " + step + ", previousCommunityNumber " + previousCommunityNumber + ", communityNumber " + communityNumber, (communityNumber) == (previousCommunityNumber));
+//			System.out.println("Step " + step + ", previousCommunityNumber " + previousCommunityNumber + ", communityNumber " + communityNumber);
+			
+			if (step==6.0) {
+				
+				assertTrue("Step " + step + ", previousCommunityNumber " + previousCommunityNumber + ", communityNumber " + communityNumber, (communityNumber) == (previousCommunityNumber+1));
 			}
 		}
 		assertTrue(true);

@@ -74,6 +74,7 @@ public class MobileSandSharc extends DynSharc {
 	protected String timeMeanSpeedMarker = "timeMeanSpeed";
 
 	protected String speedType = "timemean"; // or 'instant' , 'spacetimemean'
+	protected int emergencePeriod;
 	
 	/**
 	 * @param graph
@@ -101,6 +102,7 @@ public class MobileSandSharc extends DynSharc {
 		if (params.get("speedType") != null) {
 			this.speedType = (String) params.get("speedType");
 		}
+		emergencePeriod = 2;
 	}
 	
 	protected void updateOriginator(Node u, Object previousCommunity) {
@@ -209,86 +211,127 @@ public class MobileSandSharc extends DynSharc {
 			u.removeAttribute(marker + ".new_originator");
 	}
 
-//	/**
-//	 * Compute the scores for all relevant communities for the selected node
-//	 * using the SHARC algorithm
-//	 * 
-//	 * @param u
-//	 *            Node for which the computation is performed
-//	 * @complexity O(DELTA^2) where DELTA is the average node degree in the
-//	 *             network
-//	 */
-//	@Override
-//	protected void communityScores(Node u) {
-//		/*
-//		 * Compute the "simple" count of received messages for each community.
-//		 * This will be used as a fallback metric if the maximum "Sharc" score
-//		 * is 0, meaning there is no preferred community.
-//		 */
-//		super.communityScores(u);
-//		communityCounts = communityScores;
-//		System.out.println("in MobileSandSharc community scores ");
-//		/*
-//		 * Reset the scores for each communities
-//		 */
-//		communityScores = new HashMap<Object, Double>();
-//
-//		/*
-//		 * Iterate over the nodes that this node "hears"
-//		 */
-//		System.out.print("node " + u.getId() + ", neighbors: ");
-//		for (Edge e : u.getEnteringEdgeSet()) {
-//			Node v = e.getOpposite(u);
-//			/*
-//			 * Update the count for this community
-//			 */
-//			if (v.hasAttribute(marker)) {
-//				System.out.print("\t" + v.getId() + " " + v.getAttribute(marker));
-//				// Update score
-//				Double sim = similarity(u, v);
-//				System.out.println("calculate  scores " + ", sim: " + sim);
-//				String vComId = v.getAttribute(marker);
-//				if (communityScores.get(vComId) == null)
-//					communityScores.put(vComId, sim);
-//				else {
-//					Double currentScore = communityScores.get(vComId);
-//					// check if a node u has sim with some neighbors of the same community zero and non-zero -> then this community should be devided  
-//					if (currentScore != 0 && sim == 0) {
-//						
-//					}
-//					communityScores.put(vComId, currentScore + sim);
-//				}
-//			}
-//		}
-//		System.out.println();
-//	}
-	
 	public void setEmergenceMode(Node u) {
 		// perform emergence 
-//		if (u.hasAttribute(marker + ".emergence")) {
-//			
+//		if (u.getId().equals("0.64")) {
+//			System.out.println("step " + graph.getStep() + "emergence? " + u.hasAttribute("emergence") + ", emergence.done " + u.hasAttribute("emergence.done"));
+////			if (u.hasAttribute("emergence.to") && !u.hasAttribute("emergence.done")) {
+////				System.out.println("originate " + (Community)u.getAttribute("emergence.to"));
+////			}
 //		}
-		// check if emergence of a new community is needed 
-		// if the node has similarities with other nodes of his community equal zero, then he should originate new community 
-
-		DecimalFormat df = new DecimalFormat("##.##");
-//		System.out.print("Step " + graph.getStep() + ", node " + u.getId() + ", com: " + u.getAttribute(marker) + ", checks neighbors: ");
-		for (Edge e : u.getEnteringEdgeSet()) {
-			Node v = e.getOpposite(u);
-			if (v.hasAttribute(marker) && v.getAttribute(marker)==u.getAttribute(marker)) {
-				Double sim = similarity(u, v);
-//				System.out.print("\t" + v.getId() + ",com:" + v.getAttribute(marker) + ",sim: " +  df.format(sim));
-				if (sim.equals(new Double(0.0))) {
-					Community previousCom = (Community)u.getAttribute(marker);
-					originateCommunity(u);
-					System.out.println("Node " + u.getId() + " emerges a new community " + u.getAttribute(marker) + " from " + previousCom.getId());
-					break;
+//		System.out.println("step " + graph.getStep());
+//		for (Node n : graph.getNodeSet()) {
+//			System.out.print("\t node:"+n.getId()+","+n.getAttribute(marker));
+//		}
+//		System.out.println();
+		if (u.hasAttribute("emergence.to") && !u.hasAttribute("emergence.done")) {
+			originateCommunity(u, (Community)u.getAttribute("emergence.to"));
+			u.addAttribute("emergence.done", true);
+//			System.out.println("Node " + u.getId() + " emerges a new community at step " + graph.getStep() + " from " + u.getAttribute("emergence.from") + ", to: " + u.getAttribute("emergence.to") + " " + u.getAttribute(marker));
+//			System.out.println("step " + graph.getStep());
+//			for (Node n : graph.getNodeSet()) {
+//				System.out.print("\t node:"+n.getId()+","+n.getAttribute(marker));
+//			}
+		}
+//			
+		if (!u.hasAttribute("emergence.done")) {
+			// check if emergence of a new community is needed 
+			// if the node has similarities with other nodes of his community equal zero, then the emergence is needed
+			DecimalFormat df = new DecimalFormat("##.##");
+	//		System.out.print("Step " + graph.getStep() + ", node " + u.getId() + ", com: " + u.getAttribute(marker) + ", checks neighbors: ");
+			boolean needForEmergence = false;
+			boolean isEmergenceNeighbor = false;
+			Community emergenceNeighborCom = null;
+			if (u.getEnteringEdgeSet().size() > 1) {
+				for (Edge e : u.getEnteringEdgeSet()) {
+					Node v = e.getOpposite(u);
+					if (v.hasAttribute(marker)) {
+						Double sim = similarity(u, v);
+//						System.out.println("step " + graph.getStep() + " " + u.getId() + "," + u.getAttribute(marker) + " with " + v.getId() + "," + v.getAttribute(marker) + ",sim: " +  df.format(sim) + ", v.emergence? " + v.hasAttribute("emergence"));
+						if (v.getAttribute(marker).equals(u.getAttribute(marker)) && sim.equals(new Double(0.0))) {
+							needForEmergence = true;
+	//						System.out.println("node recognizes emergence " + u.getId() + " with " + v.getId() + ",com:" + v.getAttribute(marker) + ",sim: " +  df.format(sim));
+						}
+						// if the node has a neighbor that is about to emerge from the same community 
+						if (v.hasAttribute("emergence") && v.hasAttribute("emergence.from")) {
+							Community neighbourPreviousCommunity = (Community)v.getAttribute("emergence.from");
+							if (neighbourPreviousCommunity.equals((Community)u.getAttribute(marker))) {
+								isEmergenceNeighbor = true;
+								if (!sim.equals(new Double(0.0))) {
+									emergenceNeighborCom = v.getAttribute("emergence.to");
+	//								System.out.println("Node " + u.getId() + " found a node to join at step" + graph.getStep() + " from " + u.getAttribute(marker) + ", to: " + emergenceNeighborCom);
+									
+									if (needForEmergence) {
+										break;
+									}
+								}
+							}
+						}
+					}
 				}
 			}
+			if (u.getId().equals("0.64")) {
+				System.out.println("step " + graph.getStep() + ", needForEmergence? " + needForEmergence + ", speed " + u.getAttribute(timeMeanSpeedMarker));
+//				if (u.hasAttribute("emergence.to") && !u.hasAttribute("emergence.done")) {
+//					System.out.println("originate " + (Community)u.getAttribute("emergence.to"));
+//				}
+			}
+			if (needForEmergence) {
+				// check if other node is marked as emergence
+				if (!isEmergenceNeighbor){
+					// if there is no neighbor that is marked as emergence, originate a new community
+					u.addAttribute("emergence.to", new Community());
+//					System.out.println("Node " + u.getId() + " will create a new community ast step" + graph.getStep() + " from " + u.getAttribute(marker) + " from " + u.getAttribute("emergence.to") + ", isEmergenceNeighbor: " + isEmergenceNeighbor);
+					
+				} else if (emergenceNeighborCom != null) {
+					u.addAttribute("emergence.to", emergenceNeighborCom);
+				}
+				// do nothing if there is a emergence node but in different class (sim==0)
+				if (u.hasAttribute("emergence.to")) {
+					Community previousCom = (Community)u.getAttribute(marker);
+					u.addAttribute("emergence", emergencePeriod);
+					u.addAttribute("emergence.from",  (Community)u.getAttribute(marker));
+//					System.out.println("Node " + u.getId() + " will emerge a new community ast step" + graph.getStep() + " " + u.getAttribute(marker) + " from " + previousCom.getId() + ", to: " + u.getAttribute("emergence.to"));
+				}
+			}
+			if (u.getId().equals("0.64")) {
+				if (u.hasAttribute("emergence.to") && !u.hasAttribute("emergence.done")) {
+					System.out.println("originate " + (Community)u.getAttribute("emergence.to") + " from neighbor? " + (emergenceNeighborCom!=null) + " link: " + (String)u.getAttribute("vehicleLane"));
+				}
+//				System.out.println();
+			}
 		}
-//		System.out.println();
-	}
+		if (u.hasAttribute("emergence")) {
+			int remaining = (Integer)u.getAttribute("emergence");
 	
+			// Decrease break mode lifetime
+			if (remaining > 0) {
+				u.setAttribute("emergence", remaining - 1);
+			}
+			// clear all emergence markers every time a vehicle changes it's mobility class
+			else if (remaining == 0) {
+				u.removeAttribute("emergence");
+				u.removeAttribute("emergence.from");
+				u.removeAttribute("emergence.to");
+				u.removeAttribute("emergence.done");
+//				System.out.println("Node " + u.getId() + " removes emergence markers at step" + graph.getStep());
+			}
+		}
+	}
+
+//	protected boolean restartEmergence(Node n) {
+//		boolean changeMobilityClass = false;
+//		if (n.hasAttribute("))
+//		return changeMobilityClass;
+//	}
+	
+	protected void originateCommunity(Node node, Community c) {
+		node.addAttribute(marker, c);
+		node.setAttribute(marker + ".score", 0.0);
+		node.setAttribute(marker + ".originator", true);
+		node.setAttribute(marker + ".new_originator", true);
+	}
+
 	@Override
 	public void computeNode(Node node) {
 		super.computeNode(node);

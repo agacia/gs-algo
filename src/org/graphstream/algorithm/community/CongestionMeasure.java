@@ -393,7 +393,7 @@ Algorithm, Sink {
 		if (sumNonZeroCount > 0) {
 			timeMeanSpeed = sumSpeed / sumNonZeroCount;
 		}
-//		System.out.println(" timeMeanSpeed " + timeMeanSpeed + " historical records: " + timestamps.length + ", nonzero: " + sumNonZeroCount);
+//		System.out.println("node " + node.getId() +" timeMeanSpeed " + timeMeanSpeed + " historical records: " + timestamps.length + ", nonzero: " + sumNonZeroCount);
 		node.setAttribute(timeMeanSpeedMarker, timeMeanSpeed);
 		node.setAttribute(timeMeanSpeedMarker+".count", sumNonZeroCount);
 		return timeMeanSpeed;
