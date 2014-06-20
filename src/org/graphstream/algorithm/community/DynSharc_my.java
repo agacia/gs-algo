@@ -1,38 +1,36 @@
 package org.graphstream.algorithm.community;
 
-import java.io.Console;
-
 import org.apache.commons.math.stat.descriptive.moment.*;
 import org.graphstream.graph.*;
 
-public class DynSharc extends NewSawSharc {
+public class DynSharc_my extends NewSawSharc_my {
 
 	protected int stallingThreshold = 5;
 	protected int breakPeriod = 5;
 
-	public DynSharc() {
+	public DynSharc_my() {
 		super();
 	}
 
-	public DynSharc(Graph graph, String marker) {
+	public DynSharc_my(Graph graph, String marker) {
 		super(graph, marker);
 	}
 
-	public DynSharc(Graph graph, String marker, String weightMarker) {
+	public DynSharc_my(Graph graph, String marker, String weightMarker) {
 		super(graph, marker, weightMarker);
 	}
 
-	public DynSharc(Graph graph, String marker, int stallingThreshold,
+	public DynSharc_my(Graph graph, String marker, int stallingThreshold,
 			int breakPeriod) {
 		super(graph, marker);
 		setParameters(stallingThreshold, breakPeriod);
 	}
 
-	public DynSharc(Graph graph) {
+	public DynSharc_my(Graph graph) {
 		super(graph);
 	}
 
-	public DynSharc(Graph graph, int stallingThreshold, int breakPeriod) {
+	public DynSharc_my(Graph graph, int stallingThreshold, int breakPeriod) {
 		super(graph);
 		setParameters(stallingThreshold, breakPeriod);
 	}
@@ -42,98 +40,6 @@ public class DynSharc extends NewSawSharc {
 		this.breakPeriod = breakPeriod;
 	}
 
-	public void processNodeBreakMode(Node u) {
-		int remaining = (Integer) u.getAttribute(marker + ".break");
-		if (!u.hasAttribute(marker + ".break_done")) {
-			/*
-			 * Search for a neighbor in break mode, otherwise, initiate a
-			 * new community
-			 */
-			Object newCommunity = null;
-			for (Edge e : u.getEnteringEdgeSet()) {
-				Node v = e.getOpposite(u);
-				if (v.hasAttribute(marker)
-						&& v.hasAttribute(marker + ".break")
-						&& v.hasAttribute(marker + ".break_done")
-						&& v.hasAttribute(marker + ".broken_community")
-						&& v.<Object> getAttribute(marker + ".broken_community").equals(u.<Object> getAttribute(marker + ".broken_community"))) {
-					newCommunity = v.getAttribute(marker);
-
-//					System.out.println("BREAK node joins another com " + u.getId());
-				}
-			}
-			if (newCommunity == null) {
-				originateCommunity(u);
-
-//				System.out.println("BREAK node originates com " + u.getId());
-			} else {
-				u.setAttribute(marker, newCommunity);
-			}
-			u.setAttribute(marker + ".break_done", true);
-		}
-
-		/*
-		 * Decrease break mode lifetime
-		 */
-		if (remaining > 0) {
-			u.setAttribute(marker + ".break", remaining - 1);
-		}
-
-		/*
-		 * Terminate break mode on lifetime expiration
-		 */
-		else if (remaining == 0) {
-			u.removeAttribute(marker + ".break");
-			u.removeAttribute(marker + ".broken_community");
-			u.removeAttribute(marker + ".break_done");
-		}
-	}
-	
-	public void setBreakMode(Node u) {
-		if (u.hasAttribute(marker + ".stalling") && u.getNumber(marker + ".stalling") > 0) {
-			if (u.getNumber(marker + ".stalling") >= stallingThreshold) {
-				// Enable break mode
-				u.setAttribute(marker + ".break", breakPeriod - 1);
-				u.setAttribute(marker + ".broken_community",
-						u.getAttribute(marker));
-			}
-		}
-	}
-	
-	
-	
-	public void updateFreshnessAndStalling(Node u) {
-		Object previousCommunity = u.getAttribute(marker);
-		if (previousCommunity == null || previousCommunity.equals(u.getAttribute(marker))) {
-			int freshness;
-			if (u.hasAttribute(marker + ".freshness")) {
-				freshness = (Integer) u.getAttribute(marker + ".freshness");
-			} else {
-				freshness = 0;
-			}
-
-			updateFreshessCounter(u);
-
-			/*
-			 * Has freshness be incremented ? If no, increment the
-			 */
-			if (freshness >= u.getNumber(marker + ".freshness")) {
-				// not incremented
-				if (u.hasAttribute(marker + ".stalling")) {
-					u.setAttribute(marker + ".stalling",
-							u.getNumber(marker + ".stalling") + 1);
-				} else {
-					u.setAttribute(marker + ".stalling", 1);
-				}
-			} else
-				u.setAttribute(marker + ".stalling", 0);
-
-		} else {
-			u.setAttribute(marker + ".freshness", 0);
-			u.setAttribute(marker + ".stalling", 0);
-		}
-	}
-	
 	/**
 	 * Compute the node new assignment using the SAw-SHARC algorithm
 	 * 
@@ -144,7 +50,7 @@ public class DynSharc extends NewSawSharc {
 	 */
 	@Override
 	public void computeNode(Node u) {
-		
+
 		/*
 		 * Recall previous community (will be used for originator update)
 		 */
@@ -164,7 +70,50 @@ public class DynSharc extends NewSawSharc {
 		 * Process node break mode
 		 */
 		else if (u.hasAttribute(marker + ".break")) {
-			processNodeBreakMode(u);
+			int remaining = (Integer) u.getAttribute(marker + ".break");
+
+			if (!u.hasAttribute(marker + ".break_done")) {
+				/*
+				 * Search for a neighbor in break mode, otherwise, initiate a
+				 * new community
+				 */
+				Object newCommunity = null;
+				for (Edge e : u.getEnteringEdgeSet()) {
+					Node v = e.getOpposite(u);
+					if (v.hasAttribute(marker)
+							&& v.hasAttribute(marker + ".break")
+							&& v.hasAttribute(marker + ".break_done")
+							&& v.hasAttribute(marker + ".broken_community")
+							&& v.<Object> getAttribute(
+									marker + ".broken_community").equals(
+									u.<Object> getAttribute(marker
+											+ ".broken_community"))) {
+						newCommunity = v.getAttribute(marker);
+					}
+				}
+				if (newCommunity == null) {
+					originateCommunity(u);
+				} else {
+					u.setAttribute(marker, newCommunity);
+				}
+				u.setAttribute(marker + ".break_done", true);
+			}
+
+			/*
+			 * Decrease break mode lifetime
+			 */
+			if (remaining > 0) {
+				u.setAttribute(marker + ".break", remaining - 1);
+			}
+
+			/*
+			 * Terminate break mode on lifetime expiration
+			 */
+			else if (remaining == 0) {
+				u.removeAttribute(marker + ".break");
+				u.removeAttribute(marker + ".broken_community");
+				u.removeAttribute(marker + ".break_done");
+			}
 		}
 
 		/*
@@ -184,13 +133,50 @@ public class DynSharc extends NewSawSharc {
 		 * Update freshness counter and stalling value or reset everything if
 		 * the node has changed community
 		 */
-		updateFreshnessAndStalling(u);
+		if (previousCommunity == null
+				|| previousCommunity.equals(u.getAttribute(marker))) {
+			int freshness;
+			if (u.hasAttribute(marker + ".freshness")) {
+				freshness = (Integer) u.getAttribute(marker + ".freshness");
+			} else {
+				freshness = 0;
+			}
 
-		/*
-		 * Enable break mode if the stalling threshold is reached
-		 */
-		setBreakMode(u);
-		
+			updateFreshessCounter(u);
+
+			/*
+			 * Has freshness be incremented ? If no, increment the
+			 */
+			if (freshness >= u.getNumber(marker + ".freshness")) {
+
+				if (u.hasAttribute(marker + ".stalling")) {
+					u.setAttribute(marker + ".stalling",
+							u.getNumber(marker + ".stalling") + 1);
+				} else {
+					u.setAttribute(marker + ".stalling", 1);
+				}
+			} else
+				u.setAttribute(marker + ".stalling", 0);
+
+		} else {
+			u.setAttribute(marker + ".freshness", 0);
+			u.setAttribute(marker + ".stalling", 0);
+		}
+
+		if (u.hasAttribute(marker + ".stalling")
+				&& u.getNumber(marker + ".stalling") > 0) {
+			/*
+			 * Enable break mode if the stalling threshold is reached
+			 */
+			if (u.getNumber(marker + ".stalling") >= stallingThreshold) {
+
+				// Enable break mode
+				u.setAttribute(marker + ".break", breakPeriod - 1);
+				u.setAttribute(marker + ".broken_community",
+						u.getAttribute(marker));
+			}
+		}
+
 	}
 
 	@Override

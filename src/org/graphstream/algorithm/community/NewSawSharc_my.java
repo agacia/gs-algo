@@ -17,42 +17,36 @@
  */
 package org.graphstream.algorithm.community;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 
 /**
- * Implementation of the SAw-SHARC community detection algorithm (Stability
+ * Re-implementation of the SAw-SHARC community detection algorithm (Stability
  * Aware Sharper Heuristic for Assignment of Robust Communities).
  * 
  * @reference TO BE PROVIDED
  * @author Guillaume-Jean Herbiet
  * 
  */
-public class SawSharc extends Sharc_oryg {
+public class NewSawSharc_my extends Sharc_my {
 
-	protected boolean forcedYes = false;
-	
 	/**
 	 * Name of the marker that is used to store weight of links on the graph
 	 * that this algorithm is applied to.
 	 */
-	protected String weightMarker = "weight";
+	protected String weightMarker = "weightM";
 
 	/**
-	 * Cumulative distribution function of the links stability estimates.
+	 * Maximum weight on all incoming links
 	 */
-	protected ArrayList<Double> cdf;
+	protected Double maxWeight = Double.NEGATIVE_INFINITY;
 
 	/**
 	 * New instance of the SAw-SHARC community detection algorithm, not attached
 	 * to a graph and using the default community marker.
 	 */
-	public SawSharc() {
+	public NewSawSharc_my() {
 		super();
 	}
 
@@ -66,7 +60,7 @@ public class SawSharc extends Sharc_oryg {
 	 * @param marker
 	 *            String used as marker for the community attribute
 	 */
-	public SawSharc(Graph graph, String marker) {
+	public NewSawSharc_my(Graph graph, String marker) {
 		super(graph, marker);
 	}
 
@@ -83,7 +77,7 @@ public class SawSharc extends Sharc_oryg {
 	 * @param weightMarker
 	 *            edge weight marker
 	 */
-	public SawSharc(Graph graph, String marker, String weightMarker) {
+	public NewSawSharc_my(Graph graph, String marker, String weightMarker) {
 		super(graph, marker);
 		this.weightMarker = weightMarker;
 	}
@@ -95,16 +89,16 @@ public class SawSharc extends Sharc_oryg {
 	 * @param graph
 	 *            the graph to which the algorithm will be applied
 	 */
-	public SawSharc(Graph graph) {
+	public NewSawSharc_my(Graph graph) {
 		super(graph);
 	}
 
 	@Override
 	public void computeNode(Node u) {
 		/*
-		 * First construct the cdf based on link weights
+		 * First find the maximum weight from all weights
 		 */
-		constructCdf(u);
+		setMaxWeight(u);
 
 		/*
 		 * Then perform the assignment
@@ -126,64 +120,37 @@ public class SawSharc extends Sharc_oryg {
 	@Override
 	public Double similarity(Node a, Node b) {
 		Double sim;
-
-		// Linear to "forced-NO"
-		if (!forcedYes) {
-			sim = Math.pow(super.similarity(a, b), (1.0 / cdfValue(a, b)));
+		
+		/* Difference to the oryginal NewSawSharc
+		 * if (maxWeight == Double.NEGATIVE_INFINITY || maxWeight == 0.0)
+			sim = super.similarity(a, b);
+		 */
+		
+		// no neighbors or no weight - process normal neighorhood similarity (0 if no common edges, 1 if one neighbor only) 
+		if (maxWeight == Double.NEGATIVE_INFINITY) {
+			sim = super.similarity(a, b);
 		}
-		// "Forced-YES" to "forced-NO"
+		// if there is no neighbor with weight > 0
+		else if (maxWeight == 0.0) {
+			sim = 0.0;
+//			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ sim + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
+		}
 		else {
-			sim = Math
-					.pow(super.similarity(a, b), (1.0 / cdfValue(a, b)) - 1.0);
+			sim = super.similarity(a, b) * (getWeightInLinkFrom(a, b) / maxWeight);
+//			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ super.similarity(a, b) + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
 		}
-
-//		System.out.println(a.getId() + " " + b.getId() + " " + "sim: "
-//				+ super.similarity(a, b) + " wsim: " + sim);
 		return sim;
 	}
 
-	protected void constructCdf(Node u) {
-		cdf = new ArrayList<Double>();
+	protected void setMaxWeight(Node u) {
 
-		Double maxWeight = 0.0;
+		maxWeight = Double.NEGATIVE_INFINITY;
 		for (Edge e : u.getEnteringEdgeSet()) {
 			Double weight = getWeightInLinkFrom(u, e.getOpposite(u));
-			cdf.add(weight);
 			if (weight > maxWeight) {
 				maxWeight = weight;
 			}
 		}
-
-		// Do this only if Forced-YES method is used in similarity
-		if (maxWeight == 0.0 && forcedYes) {
-			cdf.clear();
-			cdf.add(1.0);
-			cdf.add(0.0);
-		}
-
-		Collections.sort(cdf);
-		Collections.reverse(cdf);
-
-		//System.out.println(u.getId() + " " + cdf.toString());
-	}
-
-	protected Double cdfValue(Node a, Node b) {
-		/*
-		 * Search for the number of links of lower value
-		 */
-		int lighterLinks = 0;
-		Iterator<Double> i = cdf.iterator();
-		while (i.hasNext() && i.next() > getWeightInLinkFrom(a, b)) {
-			lighterLinks++;
-		}
-
-		/*
-		 * CDF value based on the position on the CDF
-		 */
-		Double val = (new Double(cdf.size()) - new Double(lighterLinks))
-				/ (new Double(cdf.size()));
-		//System.out.println(a.getId() + " " + b.getId() + " " + "val: " + val);
-		return val;
 	}
 
 	protected Double getWeightInLinkFrom(Node a, Node b) {
@@ -194,6 +161,7 @@ public class SawSharc extends Sharc_oryg {
 					weightMarker);
 		}
 		return weight;
-
 	}
+	
+	
 }

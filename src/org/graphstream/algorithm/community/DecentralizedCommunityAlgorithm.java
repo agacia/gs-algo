@@ -59,6 +59,15 @@ public abstract class DecentralizedCommunityAlgorithm implements
 	protected String marker;
 	protected String nonUniqueMarker;
 
+	protected Dictionary<String, Object> params;
+	public String getParameter(String name) {
+		String val = null;
+		if (this.params != null) {
+			val = this.params.get(name).toString();
+		}
+		return val;
+	}
+	
 	/**
 	 * Set to false after {@link #compute()}, unless static mode is set.
 	 */
@@ -195,6 +204,7 @@ public abstract class DecentralizedCommunityAlgorithm implements
 	 */
 	public void setParameters(Dictionary<String, Object> params) {
 	}
+	
 	
 	/**
 	 * Set the random number generator for this algorithm. For sake of

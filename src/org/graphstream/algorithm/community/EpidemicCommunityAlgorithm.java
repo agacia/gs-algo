@@ -31,7 +31,6 @@
  */
 package org.graphstream.algorithm.community;
 
-import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -78,8 +77,6 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 	 */
 	@Override
 	public void setParameters(Dictionary<String, Object> params) {
-		System.out.println("setting params");
-		
 	}
 	
 	/**
@@ -119,18 +116,8 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 			originateCommunity(node);
 		}
 		else if (maxScore <= 0) {
-//			System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
-//					+ " with negative mobility measure (" + maxScore + "). is originator? " + node.hasAttribute(marker + ".originator"));
 			if (!node.hasAttribute(marker + ".originator")) {
 				originateCommunity(node);
-//				if ((boolean)node.getAttribute(marker + ".originator").equals(true)) {
-//					
-//				}
-			//if ((Double)node.getAttribute(marker+".score") < 1.0) { 
-				// originate new community if the node is not the originator of its current community
-//				System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
-//						+ " with negative mobility measure (" + maxScore + ")." 
-//						+ " Should originate ? Current com " + node.getAttribute(marker) + "," + node.getAttribute(marker+".score"));
 			}
 		}
 		else {

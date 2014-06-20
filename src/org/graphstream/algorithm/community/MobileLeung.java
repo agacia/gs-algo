@@ -38,7 +38,6 @@
 package org.graphstream.algorithm.community;
 
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Dictionary;
 import java.util.HashMap;
 
@@ -280,8 +279,6 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 		 */
 		Object previousCommunity = node.getAttribute(marker);
 		Double previousScore = (Double) node.getAttribute(marker + ".score");
-//		Integer degree = node.getEnteringEdgeSet().size();
-//		Integer previousDegree = degree;
 		
 		super.computeNode(node);
 
@@ -294,11 +291,7 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 			previousCommunity = node.getAttribute(marker);
 			previousScore = (Double) node.getAttribute(marker + ".score");
 		} 
-//		else {
-//			previousDegree = (Integer) node.getAttribute("degree");
-//		}
-//		node.setAttribute("degree", degree);
-		
+
 		/*
 		 * The node is the originator of the community and hasn't changed
 		 * community at this iteration (or we are at the first simulation step):
@@ -308,15 +301,6 @@ public class MobileLeung extends EpidemicCommunityAlgorithm {
 				&& (previousScore.equals(1.0)))
 			node.setAttribute(marker + ".score", 1.0);
 
-		/*
-		 * The node is the originator of the community and has no neighbours
-		 * (continue traveling without neighbors).
-		 * Keep the community id and the maximum score.
-		 */
-//		else if (previousDegree.equals(0) && degree.equals(0)) {
-//			node.setAttribute(marker, previousCommunity);
-//			node.setAttribute(marker + ".score", 1.0);
-//		}
 		
 		/*
 		 * Otherwise search for the highest score amongst neighbors and reduce

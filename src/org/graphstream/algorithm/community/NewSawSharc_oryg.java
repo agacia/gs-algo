@@ -17,6 +17,8 @@
  */
 package org.graphstream.algorithm.community;
 
+import java.util.Dictionary;
+
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -29,13 +31,13 @@ import org.graphstream.graph.Node;
  * @author Guillaume-Jean Herbiet
  * 
  */
-public class NewSawSharc extends Sharc {
+public class NewSawSharc_oryg extends Sharc_oryg {
 
 	/**
 	 * Name of the marker that is used to store weight of links on the graph
 	 * that this algorithm is applied to.
 	 */
-	protected String weightMarker = "weightM";
+	protected String weightMarker = "weight";
 
 	/**
 	 * Maximum weight on all incoming links
@@ -46,7 +48,7 @@ public class NewSawSharc extends Sharc {
 	 * New instance of the SAw-SHARC community detection algorithm, not attached
 	 * to a graph and using the default community marker.
 	 */
-	public NewSawSharc() {
+	public NewSawSharc_oryg() {
 		super();
 	}
 
@@ -60,7 +62,7 @@ public class NewSawSharc extends Sharc {
 	 * @param marker
 	 *            String used as marker for the community attribute
 	 */
-	public NewSawSharc(Graph graph, String marker) {
+	public NewSawSharc_oryg(Graph graph, String marker) {
 		super(graph, marker);
 	}
 
@@ -77,7 +79,7 @@ public class NewSawSharc extends Sharc {
 	 * @param weightMarker
 	 *            edge weight marker
 	 */
-	public NewSawSharc(Graph graph, String marker, String weightMarker) {
+	public NewSawSharc_oryg(Graph graph, String marker, String weightMarker) {
 		super(graph, marker);
 		this.weightMarker = weightMarker;
 	}
@@ -89,7 +91,7 @@ public class NewSawSharc extends Sharc {
 	 * @param graph
 	 *            the graph to which the algorithm will be applied
 	 */
-	public NewSawSharc(Graph graph) {
+	public NewSawSharc_oryg(Graph graph) {
 		super(graph);
 	}
 
@@ -120,30 +122,24 @@ public class NewSawSharc extends Sharc {
 	@Override
 	protected Double similarity(Node a, Node b) {
 		Double sim;
-		// no neighbors or no weight - process normal neighorhood similarity (0 if no common edges, 1 if one neighbor only) 
-		if (maxWeight == Double.NEGATIVE_INFINITY) {
+
+		if (maxWeight == Double.NEGATIVE_INFINITY || maxWeight == 0.0)
 			sim = super.similarity(a, b);
-		}
-		// if there is no neighbor with weight > 0
-		else if (maxWeight == 0.0) {
-			sim = 0.0;
-//			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ sim + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
-		}
-		else {
-			sim = super.similarity(a, b) * (getWeightInLinkFrom(a, b) / maxWeight);
-//			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ super.similarity(a, b) + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
-		}
+		else
+			sim = super.similarity(a, b)
+					* (getWeightInLinkFrom(a, b) / maxWeight);
+
+		// System.out.println(a.getId() + " " + b.getId() + " " + "sim: "
+		// + super.similarity(a, b) + " wsim: " + sim);
 		return sim;
 	}
 
 	protected void setMaxWeight(Node u) {
-
 		maxWeight = Double.NEGATIVE_INFINITY;
 		for (Edge e : u.getEnteringEdgeSet()) {
 			Double weight = getWeightInLinkFrom(u, e.getOpposite(u));
 			if (weight > maxWeight) {
 				maxWeight = weight;
-//				System.out.println("Setting maxweight: " + maxWeight);
 			}
 		}
 	}
@@ -152,11 +148,20 @@ public class NewSawSharc extends Sharc {
 		Double weight = 0.0;
 		if (a.hasEdgeFrom(b.getId())
 				&& a.<Edge>getEdgeFrom(b.getId()).hasAttribute(weightMarker)) {
-			weight = (Double) a.<Edge>getEdgeFrom(b.getId()).getAttribute(
-					weightMarker);
+			Edge edge = a.<Edge>getEdgeFrom(b.getId());
+			try {
+				weight = (Double) edge.getAttribute(weightMarker);
+			}
+			catch (ClassCastException ex) {
+				Integer intWeight = (Integer) edge.getAttribute(weightMarker);
+				weight = intWeight.doubleValue();
+			}
+//			System.out.println(graph.getStep() + "\tEdge\t" + edge.getId() + "\t" + weightMarker + "\t" + weight);
 		}
-//		System.out.println("weightmarker " + weightMarker + " weight of node " + a.getId() + " and " + b.getId() + " = " + weight);
 		return weight;
-
+	}
+	
+	public void setParameters(Dictionary<String, Object> params) {
+		this.weightMarker = (String) params.get("weightMarker");
 	}
 }

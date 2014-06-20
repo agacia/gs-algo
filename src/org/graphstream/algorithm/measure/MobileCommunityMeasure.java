@@ -31,17 +31,11 @@
  */
 package org.graphstream.algorithm.measure;
 
-import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.commons.math.stat.descriptive.moment.Mean;
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
-import org.graphstream.algorithm.DynamicAlgorithm;
-import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
-import org.graphstream.stream.SinkAdapter;
-
-import static org.graphstream.algorithm.Toolkit.communities;
 
 /**
  * Computes and updates an absolute measure based on the current community
@@ -96,7 +90,7 @@ public class MobileCommunityMeasure extends CommunityMeasure {
 
 			double[] avgValueDistribution = new double[(int) M];
 			double[] stdValueDistribution = new double[(int) M];
-			double[] sizeDistribution = new double[(int) M];
+//			double[] sizeDistribution = new double[(int) M];
 			int k = 0;
 			
 			for (Object c : communities.keySet()) {

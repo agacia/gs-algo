@@ -33,14 +33,14 @@ import org.graphstream.graph.*;
  * @author Guillaume-Jean Herbiet
  * 
  */
-public class Sharc extends EpidemicCommunityAlgorithm {
+public class Sharc_my extends EpidemicCommunityAlgorithm {
 	protected HashMap<Object, Double> communityCounts;
 
 	/**
 	 * New instance of the SHARC community detection algorithm, not attached to
 	 * a graph and using the default community marker.
 	 */
-	public Sharc() {
+	public Sharc_my() {
 		super();
 	}
 
@@ -54,7 +54,7 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 	 * @param marker
 	 *            String used as marker for the community attribute
 	 */
-	public Sharc(Graph graph, String marker) {
+	public Sharc_my(Graph graph, String marker) {
 		super(graph, marker);
 	}
 
@@ -65,7 +65,7 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 	 * @param graph
 	 *            the graph to which the algorithm will be applied
 	 */
-	public Sharc(Graph graph) {
+	public Sharc_my(Graph graph) {
 		super(graph);
 	}
 
@@ -75,18 +75,17 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 		 * Perform standard Sharc assignment
 		 */
 		super.computeNode(u);
-
-		/* TODO
+		
+		/* Difference to the oryginal Sharc algorithm
 		 * If the node final score is 0, i.e. there were no preferred community,
 		 * fall back to the "simple" epidemic assignment
 		 */
 //		if (((Double) u.getAttribute(marker + ".score")) == 0.0) {
-//			System.out.println(u.getId() + " Falling back to epidemic.");
+//			//System.out.println(u.getId() + " Falling back to epidemic.");
 //			communityScores.clear();
 //			communityScores = communityCounts;
 //			super.computeNode(u);
 //		}
-
 	}
 
 	/**
@@ -100,13 +99,6 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 	 */
 	@Override
 	protected void communityScores(Node u) {
-		/*
-		 * Compute the "simple" count of received messages for each community.
-		 * This will be used as a fallback metric if the maximum "Sharc" score
-		 * is 0, meaning there is no preferred community.
-		 */
-		super.communityScores(u);
-		communityCounts = communityScores;
 
 		/*
 		 * Reset the scores for each communities
@@ -145,7 +137,7 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 	 * @complexity O(DELTA) where DELTA is the average node degree in the
 	 *             network
 	 */
-	protected Double similarity(Node a, Node b) {
+	public Double similarity(Node a, Node b) {
 		Double similarity = 0.0;
 
 		for (Edge e : a.getEnteringEdgeSet()) {
@@ -163,11 +155,18 @@ public class Sharc extends EpidemicCommunityAlgorithm {
 		if (a.getDegree() == 0 && b.getDegree() == 0) {
 			return 0.0;
 		}
-		else if (a.getDegree() == 1) {
+		/*
+		 * Added the case if both nodes have degree equal 1
+		 */
+		else if (a.getDegree() == 1 && b.getDegree() == 1) {
 			return 1.0;
 		}
 		else {
 			return 1 - (similarity / (a.getDegree() + b.getDegree()));
 		}
+	}
+	
+	public Double getSimilarity(Node a, Node b) {
+		return similarity(a,b);
 	}
 }

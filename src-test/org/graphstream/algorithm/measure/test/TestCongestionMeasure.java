@@ -31,18 +31,14 @@
  */
 package org.graphstream.algorithm.measure.test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.graphstream.algorithm.community.CongestionMeasure;
 import org.graphstream.graph.Graph;
-import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.AdjacencyListGraph;
 import org.graphstream.stream.file.FileSourceDGS;
-import org.junit.Test;
 
 public class TestCongestionMeasure {
 	Graph g;

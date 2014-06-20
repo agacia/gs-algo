@@ -3,11 +3,9 @@
  */
 package org.graphstream.algorithm.community;
 
-import java.io.BufferedWriter;
 import java.text.DecimalFormat;
 import java.util.Dictionary;
 import java.util.HashMap;
-
 import org.graphstream.algorithm.measure.MobilityMeasure;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
@@ -17,7 +15,7 @@ import org.graphstream.graph.Node;
  * @author Guillaume-Jean Herbiet
  * 
  */
-public class MobileSandSharc extends DynSharc {
+public class MobileSandSharc extends DynSharc_my {
 
 	/**
 	 * 
@@ -237,7 +235,6 @@ public class MobileSandSharc extends DynSharc {
 		if (!u.hasAttribute("emergence.done")) {
 			// check if emergence of a new community is needed 
 			// if the node has similarities with other nodes of his community equal zero, then the emergence is needed
-			DecimalFormat df = new DecimalFormat("##.##");
 	//		System.out.print("Step " + graph.getStep() + ", node " + u.getId() + ", com: " + u.getAttribute(marker) + ", checks neighbors: ");
 			boolean needForEmergence = false;
 			boolean isEmergenceNeighbor = false;
@@ -288,7 +285,7 @@ public class MobileSandSharc extends DynSharc {
 				}
 				// do nothing if there is a emergence node but in different class (sim==0)
 				if (u.hasAttribute("emergence.to")) {
-					Community previousCom = (Community)u.getAttribute(marker);
+//					Community previousCom = (Community)u.getAttribute(marker);
 					u.addAttribute("emergence", emergencePeriod);
 					u.addAttribute("emergence.from",  (Community)u.getAttribute(marker));
 //					System.out.println("Node " + u.getId() + " will emerge a new community ast step" + graph.getStep() + " " + u.getAttribute(marker) + " from " + previousCom.getId() + ", to: " + u.getAttribute("emergence.to"));
@@ -345,23 +342,22 @@ public class MobileSandSharc extends DynSharc {
 		Double speedB = 0.0;
 		// get instantaneouos speed
 		if (this.speedType.equals("instant")) {
-			speedA = MobilityMeasure.getAvgSpeed(a, speedMarker, null);
-			speedB = MobilityMeasure.getAvgSpeed(b, speedMarker, null);
-//			System.out.println("use instant speed "  + a.getId() + " " + speedMarker + " " + speedA);	
+			speedA = MobilityMeasure.getMarkerValue(a, speedMarker);
+			speedB = MobilityMeasure.getMarkerValue(b, speedMarker);	
 		}
 		// get mean speed
 		else if (speedType.equals("timemean") || speedType.equals("spacetimemean")) {
 			if (a.hasAttribute(timeMeanSpeedMarker)) {
-				speedA = (Double)a.getAttribute(timeMeanSpeedMarker);
+				speedA = MobilityMeasure.getMarkerValue(a, timeMeanSpeedMarker);
 //				System.out.println("use timeMeanSpeedMarker "  + a.getId() + " " +  timeMeanSpeedMarker + " "  + speedA);	
 			}
 			if (b.hasAttribute(timeMeanSpeedMarker)) {
-				speedB = (Double)b.getAttribute(timeMeanSpeedMarker);	
+				speedB = MobilityMeasure.getMarkerValue(b, timeMeanSpeedMarker);	
 			}
 		}
 		// get angle
-		Double angleA = MobilityMeasure.getValue(a, angleMarker);
-		Double angleB = MobilityMeasure.getValue(b, angleMarker);
+		Double angleA = MobilityMeasure.getMarkerValue(a, angleMarker);
+		Double angleB = MobilityMeasure.getMarkerValue(b, angleMarker);
 		Double mobSim = MobilityMeasure.calculateDegreeOfCongestionDependence(speedA, speedB, angleA, angleB);
 //		System.out.println("mob sim " + a.getId() + "-" + b.getId() + "=" + mobSim);	
 		return mobSim;
@@ -392,7 +388,7 @@ public class MobileSandSharc extends DynSharc {
 	 *             network
 	 */
 	@Override
-	protected Double similarity(Node a, Node b) {
+	public Double similarity(Node a, Node b) {
 		setStabilityWeight(a, b);
 		Double sim = super.similarity(a, b);
 //		System.out.println("nei sim " + a.getId() + "-" + b.getId() + "=" + sim);	

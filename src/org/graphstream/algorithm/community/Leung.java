@@ -235,16 +235,6 @@ public class Leung extends EpidemicCommunityAlgorithm {
 			node.setAttribute(marker + ".score", 1.0);
 
 		/*
-		 * The node is the originator of the community and has no neighbours
-		 * (continue traveling without neighbors).
-		 * Keep the community id and the maximum score.
-		 */
-//		else if (previousDegree.equals(0) && degree.equals(0)) {
-//			node.setAttribute(marker, previousCommunity);
-//			node.setAttribute(marker + ".score", 1.0);
-//		}
-
-		/*
 		 * Otherwise search for the highest score amongst neighbors and reduce
 		 * it by decreasing factor
 		 */

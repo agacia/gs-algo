@@ -31,16 +31,13 @@
  */
 package org.graphstream.algorithm.community;
 
-import java.text.DecimalFormat;
+//import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.Random;
 
 import org.graphstream.algorithm.Algorithm;
-import org.graphstream.algorithm.DynamicAlgorithm;
-import org.graphstream.algorithm.measure.MobilityMeasure;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -58,7 +55,7 @@ Algorithm, Sink {
 	*/
 	protected Graph graph;
 
-	private static final Integer STOPS_NUMBER = 2;
+//	private static final Integer STOPS_NUMBER = 2;
 	private static final Integer CYCLE_TIME = 90;
 	private static final Double STOP_SPEED = 1.0;
 	
@@ -76,7 +73,7 @@ Algorithm, Sink {
 	protected String maxHistoryRecordsMarker = "maxHistoryRecords";
 	protected String angleMarker = "vehicleAngle";
 	protected String laneMarker = "vehicleLane";
-	
+	protected String linkDurationMarker = "linkDuration";
 	protected String speedType = "timemean"; // or 'instant' , 'spacetimemean'
 	protected Integer speedHistoryLength = 0;
 	
@@ -127,6 +124,9 @@ Algorithm, Sink {
 		if (params.get("timeMeanSpeedMarker") != null) {
 			this.timeMeanSpeedMarker = (String) params.get("timeMeanSpeedMarker");
 		}
+		if (params.get("linkDurationMarker") != null) {
+			this.linkDurationMarker = (String) params.get("linkDurationMarker");
+		}
 		
 	}
 	
@@ -154,6 +154,22 @@ Algorithm, Sink {
 		for (Node node : nodeSet) {
 			computeNode(node);
 		}
+		ArrayList<Edge> edgeSet = new ArrayList<Edge>(graph.getEdgeSet());
+		for (Edge edge : edgeSet) {
+			computeEdge(edge);
+		}
+	}
+	
+	/**
+	 * Count up edge interaction
+	 * @param edge
+	 */
+	private void computeEdge(Edge edge) {
+		if (edge.hasAttribute(this.linkDurationMarker)) { 
+			Integer linkDuration = (Integer)edge.getAttribute(this.linkDurationMarker);
+//			System.out.println("Edge\t" + edge.getId() + "\t" + linkDuration);
+			edge.setAttribute(this.linkDurationMarker, linkDuration+1);	
+		}		
 	}
 	
 	public void computeNode(Node node) {
@@ -257,7 +273,7 @@ Algorithm, Sink {
 		String currentLane = (String) node.getAttribute(this.laneMarker).toString();
 		String previousLane = (String) node.getAttribute(this.laneMarker + ".previous").toString();
 
-		DecimalFormat df = new DecimalFormat("##.##");
+//		DecimalFormat df = new DecimalFormat("##.##");
 		MutableInteger maxHistoryRecords = new MutableInteger();
 		maxHistoryRecords.value = -1;
 		
@@ -345,7 +361,6 @@ Algorithm, Sink {
 	public Double calculateSpaceMeanSpeed(Node node) {
 		Double spaceMeanSpeed = 0.0;
 		String myLane = "";
-		DecimalFormat df = new DecimalFormat("##.##");
 		if (node.hasAttribute(laneMarker) && node.hasAttribute(speedMarker)) {
 			ArrayList<Double> speeds = new ArrayList<Double>();
 			myLane = (String) (node.getAttribute(laneMarker).toString());
@@ -380,7 +395,7 @@ Algorithm, Sink {
 		Double[] speeds = (Double[])node.getAttribute(speedHistoryMarker);
 		Double[] timestamps = (Double[])node.getAttribute(speedHistoryTimestampsMarker);
 		Double now = graph.getStep();
-		DecimalFormat df = new DecimalFormat("##.##");
+//		DecimalFormat df = new DecimalFormat("##.##");
 //		System.out.println("timestamps node " + node.getId() + " ");
 		for (int i = 0; i < timestamps.length; ++i) {
 //			System.out.print("\t"+timestamps[i]);

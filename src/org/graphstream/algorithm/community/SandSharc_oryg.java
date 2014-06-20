@@ -13,12 +13,12 @@ import org.graphstream.graph.Node;
  * @author Guillaume-Jean Herbiet
  * 
  */
-public class SandSharc extends DynSharc {
+public class SandSharc_oryg extends DynSharc_oryg {
 
 	/**
 	 * 
 	 */
-	public SandSharc() {
+	public SandSharc_oryg() {
 		super();
 	}
 
@@ -26,11 +26,11 @@ public class SandSharc extends DynSharc {
 	 * @param graph
 	 * @param marker
 	 */
-	public SandSharc(Graph graph, String marker) {
+	public SandSharc_oryg(Graph graph, String marker) {
 		super(graph, marker);
 	}
 
-	public SandSharc(Graph graph, String marker, String weightMarker) {
+	public SandSharc_oryg(Graph graph, String marker, String weightMarker) {
 		super(graph, marker, weightMarker);
 	}
 
@@ -40,7 +40,7 @@ public class SandSharc extends DynSharc {
 	 * @param stallingThreshold
 	 * @param breakPeriod
 	 */
-	public SandSharc(Graph graph, String marker, int stallingThreshold,
+	public SandSharc_oryg(Graph graph, String marker, int stallingThreshold,
 			int breakPeriod) {
 		super(graph, marker, stallingThreshold, breakPeriod);
 	}
@@ -48,7 +48,7 @@ public class SandSharc extends DynSharc {
 	/**
 	 * @param graph
 	 */
-	public SandSharc(Graph graph) {
+	public SandSharc_oryg(Graph graph) {
 		super(graph);
 	}
 
@@ -57,7 +57,7 @@ public class SandSharc extends DynSharc {
 	 * @param stallingThreshold
 	 * @param breakPeriod
 	 */
-	public SandSharc(Graph graph, int stallingThreshold, int breakPeriod) {
+	public SandSharc_oryg(Graph graph, int stallingThreshold, int breakPeriod) {
 		super(graph, stallingThreshold, breakPeriod);
 	}
 
@@ -93,7 +93,7 @@ public class SandSharc extends DynSharc {
 							&& v.getId() != u.getAttribute(marker + ".originator_from")) {
 						scores.put(v, v.getNumber(marker + ".score"));
 						total += v.getNumber(marker + ".score");
-						if (v.getNumber(marker + ".score") > max) // not consistent with thesis - in thesis not score (similarity*weight) but community membeship (sum scores)
+						if (v.getNumber(marker + ".score") > max)
 							max = v.getNumber(marker + ".score");
 					}
 				}

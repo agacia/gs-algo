@@ -126,39 +126,24 @@ public abstract class MobilityMeasure extends SinkAdapter implements
 		compute();
 		return M;
 	}
-
-	public static Double getAvgSpeed(Node u, String speedMarker, String avgSpeedMarker) {
-		if (u == null) {
-			return 0.0;
-		}
-		if (!u.hasAttribute(speedMarker) && !u.hasAttribute(avgSpeedMarker)) {
-			System.err.println("Nodes have no attributes: " + speedMarker + " and " + avgSpeedMarker);
-			return 0.0;
-		}
-		Double speed = 0.0;
-		Double avgSpeed = 0.0;
-		if (u.hasAttribute(speedMarker)) {
-			speed = (Double) u.getAttribute(speedMarker);
-		}
-		if (u.hasAttribute(avgSpeedMarker)) {
-			avgSpeed = (Double) u.getAttribute(avgSpeedMarker);
-		}
-		if (avgSpeed == 0) {
-			return speed;
-		}
 		
-		return avgSpeed;
-	}
-	
-	public static Double getValue(Node u, String marker) {
+	public static Double getMarkerValue(Node u, String marker) {
 		if (u == null) {
 			return 0.0;
 		}
-		if (!u.hasAttribute(marker)) {
+		if (marker == null || !u.hasAttribute(marker)) {
 			System.err.println("Nodes have no attributes: " + marker);
 			return 0.0;
 		}
 		return (Double) u.getAttribute(marker);
+	}
+	
+	public static Double computeRelativeMobility(Node u, Node v, String speedMarker, String angleMarker) {
+		Double speedU = getMarkerValue(u, speedMarker);
+		Double speedV = getMarkerValue(v, speedMarker);
+		Double angleU = getMarkerValue(u, angleMarker);
+		Double angleV = getMarkerValue(u, angleMarker);
+		return calculateDegreeOfSpatialDependence(speedU, speedV, angleU, angleV);
 	}
 	
 	// TODO add position, distance?
@@ -176,7 +161,6 @@ public abstract class MobilityMeasure extends SinkAdapter implements
 			return  calculateCos(angleU, angleV) * calculateSpeedRatio(speedU, speedV);
 		}
 		return 0.0;
-		
 	}
 	
 	public static Double calculateCos(Double angleU, Double angleV) {

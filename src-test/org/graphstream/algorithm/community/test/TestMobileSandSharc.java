@@ -31,7 +31,6 @@
  */
 package org.graphstream.algorithm.community.test;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -40,18 +39,11 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.graphstream.algorithm.community.CongestionMeasure;
-import org.graphstream.algorithm.community.Crowdz;
-import org.graphstream.algorithm.community.DecentralizedCommunityAlgorithm;
-import org.graphstream.algorithm.community.MobileMarker;
 import org.graphstream.algorithm.community.MobileSandSharc;
 import org.graphstream.algorithm.measure.CommunityDistribution;
-import org.graphstream.algorithm.measure.MobilityMeasure;
 import org.graphstream.graph.Graph;
-import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.AdjacencyListGraph;
-import org.graphstream.stream.file.FileSource;
 import org.graphstream.stream.file.FileSourceDGS;
-import org.graphstream.stream.file.FileSourceFactory;
 import org.junit.Test;
 
 public class TestMobileSandSharc {
