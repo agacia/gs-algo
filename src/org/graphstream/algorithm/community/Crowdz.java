@@ -34,12 +34,12 @@
 	 */
 	package org.graphstream.algorithm.community;
 
-	import java.util.Dictionary;
-	import java.util.HashMap;
+import java.util.Dictionary;
+import java.util.HashMap;
 
-	import org.graphstream.algorithm.measure.MobilityMeasure;
-	import org.graphstream.graph.Edge;
-	import org.graphstream.graph.Graph;
+import org.graphstream.algorithm.measure.MobilityMeasure;
+import org.graphstream.graph.Edge;
+import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 
 /**
@@ -48,232 +48,193 @@ import org.graphstream.graph.Node;
  * author Agata Grzybek
  * 
  */
-public class Crowdz extends DynSharc_my {
+public class Crowdz extends EpidemicCommunityAlgorithm {
 
-		/**
-		 * 
-		 */
-		public Crowdz() {
-			super();
-		}
+	/**
+	 * Name of the marker that is used to store weight of links on the graph
+	 * that this algorithm is applied to.
+	 */
+	protected String weightMarker = "weight";
 
-		/**
-		 * @param graph
-		 * @param marker
-		 */
-		public Crowdz(Graph graph, String marker) {
-			super(graph, marker);
-		}
 
-		public Crowdz(Graph graph, String marker, String weightMarker) {
-			super(graph, marker, weightMarker);
-		}
+	/**
+	 * Name of the marker that is used to store weight of links on the graph
+	 * that this algorithm is applied to.
+	 */
+	protected String speedMarker = "vehicleSpeed";
 
-		public Crowdz(Graph graph, String marker, String weightMarker, Double congestionSpeedThreshold) {
-			super(graph, marker, weightMarker);
-			MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
-		}
-		
-		/**
-		 * @param graph
-		 * @param marker
-		 * @param stallingThreshold
-		 * @param breakPeriod
-		 */
-		public Crowdz(Graph graph, String marker, int stallingThreshold,
-				int breakPeriod) {
-			super(graph, marker, stallingThreshold, breakPeriod);
-		}
-		
-		/**
-		 * @param graph
-		 * @param marker
-		 * @param stallingThreshold
-		 * @param breakPeriod
-		 */
-		public Crowdz(Graph graph, String marker, int stallingThreshold, int breakPeriod, double congestionSpeedThreshold) {
-			super(graph, marker, stallingThreshold, breakPeriod);
-			MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
-		}
 
-		/**
-		 * Markers used to calculate mobility similarity. 
-		 */
-		protected String speedMarker = "speed";
-		protected String angleMarker = "angle";
-		
-		/**
-		 * @param graph
-		 */
-		public Crowdz(Graph graph) {
-			super(graph);
-		}
+	/**
+	 * Name of the marker that is used to store weight of links on the graph
+	 * that this algorithm is applied to.
+	 */
+	protected String angleMarker = "vehicleAngle";
 
-		/**
-		 * @param graph
-		 * @param stallingThreshold
-		 * @param breakPeriod
-		 */
-		public Crowdz(Graph graph, int stallingThreshold, int breakPeriod) {
-			super(graph, stallingThreshold, breakPeriod);
-		}
-		
-		@Override
-		public void setParameters(Dictionary<String, Object> params) {
-			super.setParameters(params);
-			this.weightMarker = (String) params.get("weightMarker");
-			this.speedMarker = (String) params.get("speedMarker");
-			if (params.get("angleMarker") != null) {
-				this.angleMarker = (String) params.get("angleMarker");
-			}
-		}
-				
-		protected Double setStabilityWeight(Node a, Node b) {
-			Double mobSim = MobilityMeasure.computeRelativeMobility(a, b, speedMarker, angleMarker);
-			setWeightLink(a, b, mobSim);
-			return mobSim;
-		}
-		
-		protected void setWeightLink(Node a, Node b, Double weight) {
-			if (!a.hasEdgeFrom(b.getId())) {
-				return;
-			}
-//			System.out.println(graph.getStep()+ " " + weightMarker);
-			a.<Edge>getEdgeFrom(b.getId()).setAttribute(weightMarker, weight);
-		}
-		
-		/**
-		 * Neighborhood weighted similarity between two nodes.
-		 * + stability weight
-		 * 
-		 * @param a
-		 *            The first node
-		 * @param b
-		 *            The second node
-		 * @return The similarity value between the two nodes
-		 * @complexity O(DELTA) where DELTA is the average node degree in the
-		 *             network
-		 */
-		@Override
-		public Double similarity(Node a, Node b) {
-			Double mobSim = setStabilityWeight(a, b);
-			Double sim = super.similarity(a, b);
-			return sim;
-		}
-
-		
-		protected void updateOriginator(Node u, Object previousCommunity) {
-			/*
-			 * Current node has originator token
-			 */
-			if (u.hasAttribute(marker + ".originator")
-					&& !u.hasAttribute(marker + ".new_originator")) {
-				/*
-				 * Originator stayed in the same community: Make the originator
-				 * token wander using a "local optimum favored" weighted random
-				 * walk.
-				 */
-				if (previousCommunity != null
-						&& previousCommunity.equals(u.getAttribute(marker))) {
-
-					double score = u.getNumber(marker + ".score");
-					double max = Double.NEGATIVE_INFINITY;
-					HashMap<Node, Double> scores = new HashMap<Node, Double>();
-					double total = 0;
-
-					/*
-					 * Search for the maximum neighboring score in the same
-					 * community update total at the same time
-					 */
-					for (Edge e : u.getEnteringEdgeSet()) {
-						Node v = e.getOpposite(u);
-						if (v.hasAttribute(marker)
-								&& v.<Object> getAttribute(marker).equals(
-										u.<Object> getAttribute(marker))
-								&& v.getId() != u.getAttribute(marker + ".originator_from")) {
-							scores.put(v, v.getNumber(marker + ".score"));
-							total += v.getNumber(marker + ".score");
-							if (v.getNumber(marker + ".score") > max) // not consistent with thesis - in thesis not score (similarity*weight) but community membeship (sum scores)
-								max = v.getNumber(marker + ".score");
-						}
-					}
-
-					/*
-					 * Current node is the local optimum: Originator token will pass
-					 * only with a given probability. Otherwise token is passed
-					 * using weighted random walk
-					 */
-					if (max > score || rng.nextDouble() < (max / score)) {
-
-						double random = rng.nextDouble() * total;
-						Node originator = null;
-						for (Node v : scores.keySet()) {
-							if (random <= scores.get(v) &&
-								v.getId() != u.getAttribute(marker + ".originator_from")) {
-									originator = v;
-							} else {
-								random -= scores.get(v);
-							}
-						}
-
-						if (originator != null) {
-							u.removeAttribute(marker + ".originator");
-							u.removeAttribute(marker + ".originator_from");
-							
-							originator.setAttribute(marker + ".originator", true);
-							originator.setAttribute(marker + ".new_originator",
-									true);
-							originator.setAttribute(marker + ".originator_from", u.getId());
-						}
-					}
-				}
-
-				/*
-				 * Originator node changed community: Simply pass the originator
-				 * token to the neighbor of previous community with the highest
-				 * score
-				 */
-				else {
-					u.removeAttribute(marker + ".originator");
-					u.removeAttribute(marker + ".originator_from");
-
-					double score = Double.NEGATIVE_INFINITY;
-					Node originator = null;
-					for (Edge e : u.getEnteringEdgeSet()) {
-						Node v = e.getOpposite(u);
-						if (v.hasAttribute(marker)
-								&& v.<Object> getAttribute(marker).equals(
-										previousCommunity)
-								&& v.hasAttribute(marker + ".score")
-								&& v.getNumber(marker + ".score") > score) {
-							score = v.getNumber(marker + ".score");
-							originator = v;
-						}
-					}
-
-					/*
-					 * A neighbor is found
-					 */
-					if (originator != null) {
-						originator.setAttribute(marker + ".originator", true);
-						originator.setAttribute(marker + ".new_originator", true);
-					}
-				}
-			}
-
-			/*
-			 * The node has been processed, so it can't be a new originator
-			 */
-			if (u.hasAttribute(marker + ".new_originator"))
-				u.removeAttribute(marker + ".new_originator");
-		}
-
-		protected void originateCommunity(Node node, Community c) {
-			node.addAttribute(marker, c);
-			node.setAttribute(marker + ".score", 0.0);
-			node.setAttribute(marker + ".originator", true);
-			node.setAttribute(marker + ".new_originator", true);
-		}
-		
-		
+	
+	public Crowdz() {
+		super();
 	}
+
+	public Crowdz(Graph graph) {
+		super(graph);
+	}
+
+	public Crowdz(Graph graph, String marker) {
+		super(graph, marker);
+	}
+
+	/**
+	 * Create a new algorithm instance, attached to the specified graph,
+	 * using the specified marker to store the community attribute, and the
+	 * specified weightMarker to retrieve the weight attribute of graph edges.
+	 * 
+	 * @param graph
+	 *            graph to which the algorithm will be applied
+	 * @param marker
+	 *            community attribute marker
+	 * @param weightMarker
+	 *            edge weight marker
+	 */
+	public Crowdz(Graph graph, String marker, String weightMarker) {
+		super(graph, marker);
+		this.weightMarker = weightMarker;
+	}
+
+
+	/**
+	 * Sets the parameters
+	 * 
+	 * @param speedMarker
+	 *            
+	 * @param angleMarker
+	 *            
+	 */
+	public void setParameters(String speedMarker, String angleMarker) {
+		this.speedMarker = speedMarker;
+		this.angleMarker = angleMarker;
+	}
+
+	/**
+	 * Sets the preference exponent and hop attenuation factor to the given
+	 * values.
+	 * 
+	 * @param speedMarker
+	 *            
+	 * @param angleMarker
+	 *            
+	 * @param weightMarker
+	 *            edge weight marker
+	 */
+	@Override
+	public void setParameters(Dictionary<String, Object> params) {
+		this.speedMarker = (String) params.get("speedMarker");
+		this.angleMarker = (String) params.get("angleMarker");
+		this.weightMarker = (String) params.get("weightMarker");
+	}
+	
+	@Override
+	public void computeNode(Node node) {
+		/*
+		 * Recall and update the node current community and previous score
+		 */
+		Object previousCommunity = node.getAttribute(marker);
+		Double previousScore = (Double) node.getAttribute(marker + ".score");
+		
+		super.computeNode(node);
+
+		/*
+		 * Update the node label score
+		 */
+
+		// Handle first iteration // originate new community
+		if (previousCommunity == null) {
+			previousCommunity = node.getAttribute(marker);
+			previousScore = (Double) node.getAttribute(marker + ".score");
+		} 
+		
+		/*
+		 * The node is the originator of the community and hasn't changed
+		 * community at this iteration (or we are at the first simulation step):
+		 * keep the maximum label score
+		 */
+		if ((node.getAttribute(marker).equals(previousCommunity))
+				&& (previousScore.equals(1.0)))
+			node.setAttribute(marker + ".score", 1.0);
+
+		/*
+		 * Otherwise search for the highest score amongst neighbors and reduce
+		 * it by decreasing factor
+		 */
+		else {
+			Double maxLabelScore = Double.NEGATIVE_INFINITY;
+			for (Edge e : node.getEnteringEdgeSet()) {
+				Node v = e.getOpposite(node);
+				if (v.hasAttribute(marker)
+						&& v.getAttribute(marker).equals(
+								node.getAttribute(marker))) {
+					if ((Double) v.getAttribute(marker + ".score") > maxLabelScore)
+						maxLabelScore = (Double) v.getAttribute(marker
+								+ ".score");
+				}
+			}
+			/*
+			 *  If node disconnected from its neighbors, it has already originated community (in super.computeNode(node);
+			 *  The case when the node continues traveling without neighbors was handled earlier
+			 */
+			if (!maxLabelScore.equals(Double.NEGATIVE_INFINITY)) { 
+				node.setAttribute(marker + ".score", maxLabelScore); 
+			}
+
+		}
+	}
+
+	/**
+	 * Compute the scores for all relevant communities for the selected node.
+	 * 
+	 * @param u
+	 *            The node for which the scores computation is performed
+	 * @complexity O(DELTA) where DELTA is is the average node degree in the
+	 *             network
+	 */
+	@Override
+	protected void communityScores(Node u) {
+		/*
+		 * Reset the scores for each communities
+		 */
+		communityScores = new HashMap<Object, Double>();
+
+		/*
+		 * Iterate over the nodes that this node "hears"
+		 */
+		for (Edge e : u.getEnteringEdgeSet()) {
+			Node v = e.getOpposite(u);
+
+			/*
+			 * Update the count for this community
+			 */
+			if (v.hasAttribute(marker)) {
+
+				// Compute the neighbor node current score
+				Double score = (Double) v.getAttribute(marker + ".score");
+				Double mobilitySimilarity = MobilityMeasure.computeRelativeMobility(u, v, speedMarker, angleMarker);
+				
+
+				// Update the score of the according community
+				if (communityScores.get(v.getAttribute(marker)) == null) {
+					communityScores.put(v.getAttribute(marker), score * mobilitySimilarity);
+				}
+				else {
+					communityScores.put(v.getAttribute(marker), communityScores.get(v.getAttribute(marker)) + (score * mobilitySimilarity));
+				}
+			}
+		}
+	}
+
+	@Override
+	protected void originateCommunity(Node node) {
+		super.originateCommunity(node);
+
+		// Correct the original community score for the Leung algorithm
+		node.setAttribute(marker + ".score", 1.0);
+	}
+}

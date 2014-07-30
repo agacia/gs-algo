@@ -31,6 +31,7 @@
  */
 package org.graphstream.algorithm.community;
 
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.TreeMap;
 
@@ -39,35 +40,37 @@ import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 
 /**
- * This class implements the "Epidemic Community Detection Algorithm" as
- * presented by Raghavan <i>et al</i>. It also serves as base class for all
- * algorithms using the epidemic label propagation paradigm.
  * 
- * @reference U. N. Raghavan, R. Albert, and S. Kumara, “Near Linear Time Al-
- *            gorithm to Detect Community Structures in Large-scale Networks,”
- *            Physical Review E (Statistical, Nonlinear, and Soft Matter
- *            Physics), vol. 76, no. 3, 2007.
- * 
- * @author Guillaume-Jean Herbiet
+ * @author Agata Grzybek
  * 
  */
-public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm {
+public class MobileClusteringAlgorithm extends DecentralizedCommunityAlgorithm {
 
 	/**
 	 * Heard communities and their associated scores
 	 */
 	protected HashMap<Object, Double> communityScores;
 
-	public EpidemicCommunityAlgorithm() {
+	public MobileClusteringAlgorithm() {
 		super();
 	}
 
-	public EpidemicCommunityAlgorithm(Graph graph) {
+	public MobileClusteringAlgorithm(Graph graph) {
 		super(graph);
 	}
 
-	public EpidemicCommunityAlgorithm(Graph graph, String marker) {
+	public MobileClusteringAlgorithm(Graph graph, String marker) {
 		super(graph, marker);
+	}
+	
+	/**
+	 * Allows to set generic parameters as a key,value 
+	 * @param params
+	 */
+	@Override
+	public void setParameters(Dictionary<String, Object> params) {
+		System.out.println("setting params");
+		
 	}
 	
 	/**
@@ -91,11 +94,9 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 		Object maxCommunity = null;
 		Double maxScore = Double.NEGATIVE_INFINITY;
 
-		TreeMap<Object, Double> scores = new TreeMap<Object, Double>(
-				communityScores);
+		TreeMap<Object, Double> scores = new TreeMap<Object, Double>(communityScores);
 		for (Object c : scores.keySet()) {
 			Double s = communityScores.get(c);
-
 			if (s > maxScore || (s == maxScore && rng.nextDouble() >= 0.5)) {
 				maxCommunity = c;
 				maxScore = s;
@@ -105,8 +106,18 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 		/*
 		 * Update the node community
 		 */
-		if (maxCommunity == null)
+		if (maxCommunity == null || node.getAttribute(marker) == null) {
 			originateCommunity(node);
+		}
+		else if (maxScore < 0) {
+			if ((Double)node.getAttribute(marker+".score") < 1.0) { 
+				// originate new community if the node is not the originator of its current community
+				System.out.println(node.getId() + " has all neighbours " + node.getDegree() 
+						+ " with negative mobility measure (" + maxScore + ")." 
+						+ " Should originate ? Current com " + node.getAttribute(marker) + "," + node.getAttribute(marker+".score"));
+				originateCommunity(node);
+			}
+		}
 		else {
 			node.setAttribute(marker, maxCommunity);
 			node.setAttribute(marker + ".score", maxScore);

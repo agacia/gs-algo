@@ -252,6 +252,7 @@ public abstract class DecentralizedCommunityAlgorithm extends SinkAdapter implem
 				computeNode(node);
 				updateDisplayClass(node);
 			}
+			graphChanged = staticMode;
 		}
 	}
 

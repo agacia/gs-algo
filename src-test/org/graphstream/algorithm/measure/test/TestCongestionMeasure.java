@@ -37,8 +37,10 @@ import java.io.InputStream;
 
 import org.graphstream.algorithm.community.CongestionMeasure;
 import org.graphstream.graph.Graph;
+import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.AdjacencyListGraph;
 import org.graphstream.stream.file.FileSourceDGS;
+import org.junit.Test;
 
 public class TestCongestionMeasure {
 	Graph g;
