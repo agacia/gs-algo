@@ -48,12 +48,15 @@ import org.graphstream.graph.Node;
  * author Agata Grzybek
  * 
  */
-public class Crowdz extends DynSharc_my {
+public class StableCrowdz extends DynSharc_my {
 
+	
+		protected String mobilitySimilarityMarker = "mobilitySimilarity";
+		
 		/**
 		 * 
 		 */
-		public Crowdz() {
+		public StableCrowdz() {
 			super();
 		}
 
@@ -61,17 +64,12 @@ public class Crowdz extends DynSharc_my {
 		 * @param graph
 		 * @param marker
 		 */
-		public Crowdz(Graph graph, String marker) {
+		public StableCrowdz(Graph graph, String marker) {
 			super(graph, marker);
 		}
 
-		public Crowdz(Graph graph, String marker, String weightMarker) {
+		public StableCrowdz(Graph graph, String marker, String weightMarker) {
 			super(graph, marker, weightMarker);
-		}
-
-		public Crowdz(Graph graph, String marker, String weightMarker, Double congestionSpeedThreshold) {
-			super(graph, marker, weightMarker);
-			MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
 		}
 		
 		/**
@@ -80,32 +78,15 @@ public class Crowdz extends DynSharc_my {
 		 * @param stallingThreshold
 		 * @param breakPeriod
 		 */
-		public Crowdz(Graph graph, String marker, int stallingThreshold,
+		public StableCrowdz(Graph graph, String marker, int stallingThreshold,
 				int breakPeriod) {
 			super(graph, marker, stallingThreshold, breakPeriod);
 		}
 		
 		/**
 		 * @param graph
-		 * @param marker
-		 * @param stallingThreshold
-		 * @param breakPeriod
 		 */
-		public Crowdz(Graph graph, String marker, int stallingThreshold, int breakPeriod, double congestionSpeedThreshold) {
-			super(graph, marker, stallingThreshold, breakPeriod);
-			MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
-		}
-
-		/**
-		 * Markers used to calculate mobility similarity. 
-		 */
-		protected String speedMarker = "speed";
-		protected String angleMarker = "angle";
-		
-		/**
-		 * @param graph
-		 */
-		public Crowdz(Graph graph) {
+		public StableCrowdz(Graph graph) {
 			super(graph);
 		}
 
@@ -114,7 +95,7 @@ public class Crowdz extends DynSharc_my {
 		 * @param stallingThreshold
 		 * @param breakPeriod
 		 */
-		public Crowdz(Graph graph, int stallingThreshold, int breakPeriod) {
+		public StableCrowdz(Graph graph, int stallingThreshold, int breakPeriod) {
 			super(graph, stallingThreshold, breakPeriod);
 		}
 		
@@ -122,45 +103,33 @@ public class Crowdz extends DynSharc_my {
 		public void setParameters(Dictionary<String, Object> params) {
 			super.setParameters(params);
 			this.weightMarker = (String) params.get("weightMarker");
-			this.speedMarker = (String) params.get("speedMarker");
-			if (params.get("angleMarker") != null) {
-				this.angleMarker = (String) params.get("angleMarker");
-			}
-		}
-				
-		protected Double setStabilityWeight(Node a, Node b) {
-			Double mobSim = MobilityMeasure.computeRelativeMobility(a, b, speedMarker, angleMarker);
-			setWeightLink(a, b, mobSim);
-			return mobSim;
-		}
-		
-		protected void setWeightLink(Node a, Node b, Double weight) {
-			if (!a.hasEdgeFrom(b.getId())) {
-				return;
-			}
-//			System.out.println(graph.getStep()+ " " + weightMarker);
-			a.<Edge>getEdgeFrom(b.getId()).setAttribute(weightMarker, weight);
-		}
-		
-		/**
-		 * Neighborhood weighted similarity between two nodes.
-		 * + stability weight
-		 * 
-		 * @param a
-		 *            The first node
-		 * @param b
-		 *            The second node
-		 * @return The similarity value between the two nodes
-		 * @complexity O(DELTA) where DELTA is the average node degree in the
-		 *             network
-		 */
-		@Override
-		public Double similarity(Node a, Node b) {
-			Double mobSim = setStabilityWeight(a, b);
-			Double sim = super.similarity(a, b);
-			return sim;
+			this.mobilitySimilarityMarker = (String) params.get("mobilitySimilarityMarker");
 		}
 
+		@Override
+		public Double similarity(Node a, Node b) {
+			Double sim = 0.0;
+			Double mob_sim = 0.0;
+			Double weight = 0.0;
+			Double weighted_sim = super.similarity(a, b);
+			
+			mob_sim = getMobSimLinkFrom(a, b);
+			sim = weighted_sim * mob_sim;
+//			System.out.println(graph.getStep() + " computing sim for " + a.getId() + ", weighted_sim " + weighted_sim + ", mob sim: " + mob_sim  + ", sim: " + sim);
+			
+			return sim;
+		}
+		
+
+		protected Double getMobSimLinkFrom(Node a, Node b) {
+			Double weight = 0.0;
+			if (a.hasEdgeFrom(b.getId())
+					&& a.<Edge>getEdgeFrom(b.getId()).hasAttribute(mobilitySimilarityMarker)) {
+				weight = (Double) a.<Edge>getEdgeFrom(b.getId()).getAttribute(
+						mobilitySimilarityMarker);
+			}
+			return weight;
+		}
 		
 		protected void updateOriginator(Node u, Object previousCommunity) {
 			/*

@@ -31,7 +31,6 @@
  */
 package org.graphstream.algorithm.community;
 
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.TreeMap;
 
@@ -70,15 +69,7 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 	public EpidemicCommunityAlgorithm(Graph graph, String marker) {
 		super(graph, marker);
 	}
-	
-	/**
-	 * Allows to set generic parameters as a key,value 
-	 * @param params
-	 */
-	@Override
-	public void setParameters(Dictionary<String, Object> params) {
-	}
-	
+
 	/**
 	 * Perform computation of one iteration of the algorithm on a given node
 	 * using the epidemic label propagation algorithm.
@@ -99,27 +90,23 @@ public class EpidemicCommunityAlgorithm extends DecentralizedCommunityAlgorithm 
 		 */
 		Object maxCommunity = null;
 		Double maxScore = Double.NEGATIVE_INFINITY;
-		
-		TreeMap<Object, Double> scores = new TreeMap<Object, Double>(communityScores);
+
+		TreeMap<Object, Double> scores = new TreeMap<Object, Double>(
+				communityScores);
 		for (Object c : scores.keySet()) {
 			Double s = communityScores.get(c);
+
 			if (s > maxScore || (s == maxScore && rng.nextDouble() >= 0.5)) {
 				maxCommunity = c;
 				maxScore = s;
 			}
 		}
-		
+
 		/*
 		 * Update the node community
 		 */
-		if (maxCommunity == null || node.getAttribute(marker) == null) {
+		if (maxCommunity == null)
 			originateCommunity(node);
-		}
-		else if (maxScore <= 0) {
-			if (!node.hasAttribute(marker + ".originator")) {
-				originateCommunity(node);
-			}
-		}
 		else {
 			node.setAttribute(marker, maxCommunity);
 			node.setAttribute(marker + ".score", maxScore);

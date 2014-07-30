@@ -119,16 +119,17 @@ public class NewSawSharc_my extends Sharc_my {
 	 */
 	@Override
 	public Double similarity(Node a, Node b) {
-		Double sim;
+		Double sim = 0.0;
+		Double weight = 0.0;
 		
 		/* Difference to the oryginal NewSawSharc
 		 * if (maxWeight == Double.NEGATIVE_INFINITY || maxWeight == 0.0)
 			sim = super.similarity(a, b);
 		 */
-		
+		Double n_sim = super.similarity(a, b);
 		// no neighbors or no weight - process normal neighorhood similarity (0 if no common edges, 1 if one neighbor only) 
 		if (maxWeight == Double.NEGATIVE_INFINITY) {
-			sim = super.similarity(a, b);
+			sim = n_sim;
 		}
 		// if there is no neighbor with weight > 0
 		else if (maxWeight == 0.0) {
@@ -136,9 +137,15 @@ public class NewSawSharc_my extends Sharc_my {
 //			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ sim + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
 		}
 		else {
-			sim = super.similarity(a, b) * (getWeightInLinkFrom(a, b) / maxWeight);
+			weight = getWeightInLinkFrom(a, b);
+			sim = n_sim * (weight / maxWeight);
 //			System.out.println(a.getId() + " " + b.getId() + " " + "sim: "+ super.similarity(a, b) + " weight: " + getWeightInLinkFrom(a, b) + ", maxWeigt: " + maxWeight);	
 		}
+//		if (m_sim < 0.5) {
+//			System.out.println(graph.getStep() + " " + a.getId() + "-" + b.getId() + ", n_sim: " + n_sim + ", m_sim: " + m_sim + ", maxWeight: " + maxWeight + ", sim: " + sim);	
+//		}
+//		System.out.println(graph.getStep() + " computin sim for " + a.getId() + " n_sim: " + n_sim + ", weight " + weight + ", maxweight " + maxWeight + ", sim " + sim);
+		
 		return sim;
 	}
 
@@ -151,6 +158,8 @@ public class NewSawSharc_my extends Sharc_my {
 				maxWeight = weight;
 			}
 		}
+//		System.out.println(graph.getStep() + " setting max weight for " + u.getId() + " " + maxWeight + ", weightMarker: " + weightMarker);
+		
 	}
 
 	protected Double getWeightInLinkFrom(Node a, Node b) {
@@ -162,6 +171,7 @@ public class NewSawSharc_my extends Sharc_my {
 		}
 		return weight;
 	}
+	
 	
 	
 }

@@ -92,7 +92,12 @@ public class DynSharc_oryg extends NewSawSharc_oryg {
 					}
 				}
 				if (newCommunity == null) {
+//					String oldCommunityId = ((Community)u.getAttribute(marker)).getId();
 					originateCommunity(u);
+//					String newCommunityId = ((Community)u.getAttribute(marker)).getId();
+//					System.out.println(graph.getStep() + "\tBreakmode\t" + u.getId() + "\t" + oldCommunityId + "\t" + newCommunityId);
+					
+					
 				} else {
 					u.setAttribute(marker, newCommunity);
 				}
@@ -209,9 +214,14 @@ public class DynSharc_oryg extends NewSawSharc_oryg {
 					&& v.hasAttribute(marker + ".freshness")
 					&& v.<Object> getAttribute(marker).equals(
 							u.<Object> getAttribute(marker))) {
-				if (similarity(u, v) >= u.getNumber(marker + ".threshold")
-						&& v.getNumber(marker + ".freshness") > freshness) {
-					freshness = (int) v.getNumber(marker + ".freshness");
+				if (v.getNumber(marker + ".freshness") > freshness) {
+					if (similarity(u, v) >= u.getNumber(marker + ".threshold")) {
+						freshness = (int) v.getNumber(marker + ".freshness");
+					}
+					else {
+						//System.out.println(graph.getStep() +"\tFRESHNESS_DOESNT_PROPAGATE__BECAUSEOF_THRESHOLD\t" + u.getId());
+					}
+					
 				}
 			}
 		}

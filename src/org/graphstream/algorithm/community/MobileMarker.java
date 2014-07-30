@@ -19,7 +19,8 @@ IDSD("idsd"),
 CONGESTION("congestion"), 
 DYNAMISM("dynamism"), 
 TIMEMEANSPEED("timemeanspeed"),
-LINK_DURATION("linkDuration");
+LINK_DURATION("linkDuration"),
+MOBILITY_SIMILARITY("mobilitySimilarity");
 
 private final String identifier;
 

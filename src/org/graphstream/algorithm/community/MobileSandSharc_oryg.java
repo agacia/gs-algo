@@ -48,12 +48,12 @@ import org.graphstream.graph.Node;
  * author Agata Grzybek
  * 
  */
-public class Crowdz extends DynSharc_my {
+public class MobileSandSharc_oryg extends DynSharc_oryg {
 
 		/**
 		 * 
 		 */
-		public Crowdz() {
+		public MobileSandSharc_oryg() {
 			super();
 		}
 
@@ -61,15 +61,15 @@ public class Crowdz extends DynSharc_my {
 		 * @param graph
 		 * @param marker
 		 */
-		public Crowdz(Graph graph, String marker) {
+		public MobileSandSharc_oryg(Graph graph, String marker) {
 			super(graph, marker);
 		}
 
-		public Crowdz(Graph graph, String marker, String weightMarker) {
+		public MobileSandSharc_oryg(Graph graph, String marker, String weightMarker) {
 			super(graph, marker, weightMarker);
 		}
 
-		public Crowdz(Graph graph, String marker, String weightMarker, Double congestionSpeedThreshold) {
+		public MobileSandSharc_oryg(Graph graph, String marker, String weightMarker, Double congestionSpeedThreshold) {
 			super(graph, marker, weightMarker);
 			MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
 		}
@@ -80,7 +80,7 @@ public class Crowdz extends DynSharc_my {
 		 * @param stallingThreshold
 		 * @param breakPeriod
 		 */
-		public Crowdz(Graph graph, String marker, int stallingThreshold,
+		public MobileSandSharc_oryg(Graph graph, String marker, int stallingThreshold,
 				int breakPeriod) {
 			super(graph, marker, stallingThreshold, breakPeriod);
 		}
@@ -91,7 +91,7 @@ public class Crowdz extends DynSharc_my {
 		 * @param stallingThreshold
 		 * @param breakPeriod
 		 */
-		public Crowdz(Graph graph, String marker, int stallingThreshold, int breakPeriod, double congestionSpeedThreshold) {
+		public MobileSandSharc_oryg(Graph graph, String marker, int stallingThreshold, int breakPeriod, double congestionSpeedThreshold) {
 			super(graph, marker, stallingThreshold, breakPeriod);
 			MobilityMeasure.setCongestionSpeedThreshold(congestionSpeedThreshold);
 		}
@@ -105,7 +105,7 @@ public class Crowdz extends DynSharc_my {
 		/**
 		 * @param graph
 		 */
-		public Crowdz(Graph graph) {
+		public MobileSandSharc_oryg(Graph graph) {
 			super(graph);
 		}
 
@@ -114,7 +114,7 @@ public class Crowdz extends DynSharc_my {
 		 * @param stallingThreshold
 		 * @param breakPeriod
 		 */
-		public Crowdz(Graph graph, int stallingThreshold, int breakPeriod) {
+		public MobileSandSharc_oryg(Graph graph, int stallingThreshold, int breakPeriod) {
 			super(graph, stallingThreshold, breakPeriod);
 		}
 		
@@ -138,7 +138,6 @@ public class Crowdz extends DynSharc_my {
 			if (!a.hasEdgeFrom(b.getId())) {
 				return;
 			}
-//			System.out.println(graph.getStep()+ " " + weightMarker);
 			a.<Edge>getEdgeFrom(b.getId()).setAttribute(weightMarker, weight);
 		}
 		
@@ -157,8 +156,8 @@ public class Crowdz extends DynSharc_my {
 		@Override
 		public Double similarity(Node a, Node b) {
 			Double mobSim = setStabilityWeight(a, b);
-			Double sim = super.similarity(a, b);
-			return sim;
+			Double neighborhoodSim = super.similarity(a, b);
+			return neighborhoodSim;
 		}
 
 		

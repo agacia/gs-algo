@@ -184,6 +184,7 @@ public class TestMobileSandSharc {
 		String speedType = "timemean";
 		params.put("speedType", speedType);
 		congestionParams.put("speedType", speedType);
+		congestionParams.put("mobilitySimilarityMarker", "mobilitySimilarity");
 		begin("data/TestMobileSandSharc-timemean.dgs");
 		dgs.nextStep();
 		int communityNumber = comDist.number();

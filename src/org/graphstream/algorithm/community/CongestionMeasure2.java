@@ -38,6 +38,7 @@ import java.util.Dictionary;
 import java.util.Random;
 
 import org.graphstream.algorithm.Algorithm;
+import org.graphstream.algorithm.measure.MobilityMeasure;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -48,7 +49,7 @@ import org.graphstream.stream.Sink;
  * author Agata Grzybek
  * 
  */
-public class CongestionMeasure implements
+public class CongestionMeasure2 implements
 Algorithm, Sink {
 	/**
 	* The graph to apply the algorithm.
@@ -74,15 +75,17 @@ Algorithm, Sink {
 	protected String angleMarker = "vehicleAngle";
 	protected String laneMarker = "vehicleLane";
 	protected String linkDurationMarker = "linkDuration";
+	protected String mobilitySimilarityMarker = "mobilitySimilarity";
+	protected String hybridMarker = "hybrid";
 	protected String speedType = "timemean"; // or 'instant' , 'spacetimemean'
 	protected Integer speedHistoryLength = 0;
 	
 
-	public CongestionMeasure() {
+	public CongestionMeasure2() {
 		super();
 	}
 
-	public CongestionMeasure(Graph graph) {
+	public CongestionMeasure2(Graph graph) {
 		this();
 		init(graph);
 	}
@@ -96,7 +99,7 @@ Algorithm, Sink {
 	 * @param weightMarker
 	 *            edge weight marker
 	 */
-	public CongestionMeasure(Graph graph, String weightMarker) {
+	public CongestionMeasure2(Graph graph, String weightMarker) {
 		this();
 		init(graph);
 		this.weightMarker = weightMarker;
@@ -127,6 +130,10 @@ Algorithm, Sink {
 		if (params.get("linkDurationMarker") != null) {
 			this.linkDurationMarker = (String) params.get("linkDurationMarker");
 		}
+		if (params.get("mobilitySimilarityMarker") != null) {
+			this.mobilitySimilarityMarker = (String) params.get("mobilitySimilarityMarker");
+		}
+		
 		
 	}
 	
@@ -157,7 +164,32 @@ Algorithm, Sink {
 		ArrayList<Edge> edgeSet = new ArrayList<Edge>(graph.getEdgeSet());
 		for (Edge edge : edgeSet) {
 			computeEdge(edge);
+			
+			
 		}
+	}
+	
+	protected Double n_similarity(Node a, Node b) {
+		Double similarity = 0.0;
+
+		for (Edge e : a.getEnteringEdgeSet()) {
+			Node v = e.getOpposite(a);
+			if (!b.hasEdgeFrom(v.getId()))
+				similarity += 1.0;
+		}
+
+		for (Edge e : b.getEnteringEdgeSet()) {
+			Node v = e.getOpposite(b);
+			if (!a.hasEdgeFrom(v.getId()))
+				similarity += 1.0;
+		}
+
+		if (a.getDegree() == 0 && b.getDegree() == 0)
+			return 0.0;
+		else if (a.getDegree() == 1 || b.getDegree() == 1)
+			return 1.0;
+		else
+			return 1 - (similarity / (a.getDegree() + b.getDegree()));
 	}
 	
 	/**
@@ -165,11 +197,32 @@ Algorithm, Sink {
 	 * @param edge
 	 */
 	private void computeEdge(Edge edge) {
-		if (edge.hasAttribute(this.linkDurationMarker)) { 
-			Integer linkDuration = (Integer)edge.getAttribute(this.linkDurationMarker);
-//			System.out.println("Edge\t" + edge.getId() + "\t" + linkDuration);
-			edge.setAttribute(this.linkDurationMarker, linkDuration+1);	
-		}		
+		if (!edge.hasAttribute(this.linkDurationMarker)) {
+			edge.setAttribute(this.linkDurationMarker, 0.0);	
+		}
+		Double linkDuration = (Double)edge.getAttribute(this.linkDurationMarker);
+		linkDuration++;
+		edge.setAttribute(this.linkDurationMarker, linkDuration);
+		String speedM = speedMarker;
+		if (speedType.equals("timemean")) {
+			speedM = this.timeMeanSpeedMarker;
+		}
+		
+		Double mobSim = MobilityMeasure.computeRelativeMobility(edge.getNode0(), edge.getNode1(), speedM, angleMarker);	
+		edge.setAttribute(this.mobilitySimilarityMarker, mobSim);
+		Double hybrid = linkDuration * mobSim;
+		edge.setAttribute(this.hybridMarker, hybrid);
+		Node a = edge.getNode0();
+		Node b = edge.getNode1();
+		Double n_sim = n_similarity(a, b);
+		edge.setAttribute("n_sim", n_sim);
+//		if (edge.getId().equals("28471-29099")) {
+//			Double speedU = MobilityMeasure.getMarkerValue(a, speedMarker);
+//			Double speedV = MobilityMeasure.getMarkerValue(b, speedMarker);
+//			Double angleU = MobilityMeasure.getMarkerValue(a, angleMarker);
+//			Double angleV = MobilityMeasure.getMarkerValue(b, angleMarker);
+//			System.out.println(graph.getStep() + " Edge\t" + edge.getId() + ", duration: " + linkDuration + " " + this.linkDurationMarker + ", nsim: " + n_sim + ", mob sim: " + mobSim + " " + this.mobilitySimilarityMarker + " hybrid " + hybrid + " speedU " + speedU + " speedV " + speedV + " angleU " + angleU + " angleV " + angleV);
+//		}
 	}
 	
 	public void computeNode(Node node) {
@@ -397,12 +450,14 @@ Algorithm, Sink {
 		Double now = graph.getStep();
 //		DecimalFormat df = new DecimalFormat("##.##");
 //		System.out.println("timestamps node " + node.getId() + " ");
-		for (int i = 0; i < timestamps.length; ++i) {
-//			System.out.print("\t"+timestamps[i]);
-			// use for calculation of the time average the seconds from the whole cycle 
-			if (timestamps[i]!=0.0 && (now-timestamps[i]) <= speedHistoryLength) {
-				sumSpeed += speeds[i];
-				sumNonZeroCount ++;
+		if (timestamps != null) {
+			for (int i = 0; i < timestamps.length; ++i) {
+	//			System.out.print("\t"+timestamps[i]);
+				// use for calculation of the time average the seconds from the whole cycle 
+				if (timestamps[i]!=0.0 && (now-timestamps[i]) <= speedHistoryLength) {
+					sumSpeed += speeds[i];
+					sumNonZeroCount ++;
+				}
 			}
 		}
 		if (sumNonZeroCount > 0) {
@@ -434,36 +489,41 @@ Algorithm, Sink {
 	}
 	
 	protected void setNumberOfStopsOnALane(Node node) {
-		String lane = (String)node.getAttribute(this.laneMarker).toString();
-		if (!node.hasAttribute(this.laneMarker + ".stops")) {
-			node.addAttribute(this.laneMarker + ".previous", lane);
-			node.addAttribute(this.laneMarker + ".current", lane);
-			node.addAttribute(this.laneMarker + ".stops", 0);
-			node.addAttribute(this.laneMarker + ".probes", 0);
-			node.addAttribute(this.laneMarker + ".stopTime", 0.0);
-		}
-		String currentLane = (String) node.getAttribute(this.laneMarker + ".current").toString();
-		if (!lane.equals(currentLane)) {
-			// new lane 
-			node.setAttribute(this.laneMarker + ".previous", currentLane);
-			node.setAttribute(this.laneMarker + ".current", lane);
-			node.setAttribute(this.laneMarker + ".stops", 0);
-			node.setAttribute(this.laneMarker + ".probes", 0);
-			node.setAttribute(this.laneMarker + ".stopTime", 0.0);
-		}
-		Integer probesAtCurrentLane = (Integer)node.getAttribute(this.laneMarker + ".probes");
-		node.setAttribute(this.laneMarker + ".probes", ++probesAtCurrentLane);
-		Double speed = (Double) node.getAttribute(this.speedMarker);
+		if (node.hasAttribute(this.laneMarker)) {
+			String lane = (String)node.getAttribute(this.laneMarker).toString();
+			if (!node.hasAttribute(this.laneMarker + ".stops")) {
+				node.addAttribute(this.laneMarker + ".previous", lane);
+				node.addAttribute(this.laneMarker + ".current", lane);
+				node.addAttribute(this.laneMarker + ".stops", 0);
+				node.addAttribute(this.laneMarker + ".probes", 0);
+				node.addAttribute(this.laneMarker + ".stopTime", 0.0);
+			}
+			String currentLane = (String) node.getAttribute(this.laneMarker + ".current").toString();
+			if (!lane.equals(currentLane)) {
+				// new lane 
+				node.setAttribute(this.laneMarker + ".previous", currentLane);
+				node.setAttribute(this.laneMarker + ".current", lane);
+				node.setAttribute(this.laneMarker + ".stops", 0);
+				node.setAttribute(this.laneMarker + ".probes", 0);
+				node.setAttribute(this.laneMarker + ".stopTime", 0.0);
+			}
+			Integer probesAtCurrentLane = (Integer)node.getAttribute(this.laneMarker + ".probes");
+			node.setAttribute(this.laneMarker + ".probes", ++probesAtCurrentLane);
 		
-		Double stopTime = (Double)node.getAttribute(this.laneMarker + ".stopTime");
-		Integer stopsAtCurrentLane = (Integer)node.getAttribute(this.laneMarker + ".stops");
-		if (speed != null && speed <= STOP_SPEED) {
-			Double currentStep = graph.getStep();
-			// stopped for the first time on the link
-			// or if stopped again after the whole cycle time passed count as a next stop
-			if (stopTime==0.0 || (currentStep-stopTime) > CYCLE_TIME) {
-				node.setAttribute(this.laneMarker + ".stopTime", currentStep);
-				node.setAttribute(this.laneMarker + ".stops", ++stopsAtCurrentLane);
+			if (node.hasAttribute(this.speedMarker)) {
+				Double speed = (Double) node.getAttribute(this.speedMarker);
+				
+				Double stopTime = (Double)node.getAttribute(this.laneMarker + ".stopTime");
+				Integer stopsAtCurrentLane = (Integer)node.getAttribute(this.laneMarker + ".stops");
+				if (speed != null && speed <= STOP_SPEED) {
+					Double currentStep = graph.getStep();
+					// stopped for the first time on the link
+					// or if stopped again after the whole cycle time passed count as a next stop
+					if (stopTime==0.0 || (currentStep-stopTime) > CYCLE_TIME) {
+						node.setAttribute(this.laneMarker + ".stopTime", currentStep);
+						node.setAttribute(this.laneMarker + ".stops", ++stopsAtCurrentLane);
+					}
+				}
 			}
 		}
 	}

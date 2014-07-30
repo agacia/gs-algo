@@ -122,15 +122,14 @@ public class NewSawSharc_oryg extends Sharc_oryg {
 	@Override
 	protected Double similarity(Node a, Node b) {
 		Double sim;
-
+		Double n_sim = super.similarity(a, b);;
+		Double weight = getWeightInLinkFrom(a, b);
 		if (maxWeight == Double.NEGATIVE_INFINITY || maxWeight == 0.0)
-			sim = super.similarity(a, b);
+			sim = n_sim;
 		else
-			sim = super.similarity(a, b)
-					* (getWeightInLinkFrom(a, b) / maxWeight);
-
-		// System.out.println(a.getId() + " " + b.getId() + " " + "sim: "
-		// + super.similarity(a, b) + " wsim: " + sim);
+			sim = n_sim * (weight / maxWeight);
+		Edge edge = a.<Edge>getEdgeFrom(b.getId());
+		//edge.setAttribute("n_sim", n_sim);
 		return sim;
 	}
 
@@ -162,6 +161,7 @@ public class NewSawSharc_oryg extends Sharc_oryg {
 	}
 	
 	public void setParameters(Dictionary<String, Object> params) {
+		super.setParameters(params);
 		this.weightMarker = (String) params.get("weightMarker");
 	}
 }

@@ -80,12 +80,15 @@ public class Sharc_oryg extends EpidemicCommunityAlgorithm {
 		 * If the node final score is 0, i.e. there were no preferred community,
 		 * fall back to the "simple" epidemic assignment
 		 */
+		// Agata change: do not fall to epidemic. If no preferred community case is solved within SandSharc_ag
 		if (((Double) u.getAttribute(marker + ".score")) == 0.0) {
-			//System.out.println(u.getId() + " Falling back to epidemic.");
-			communityScores.clear();
-			communityScores = communityCounts;
-			super.computeNode(u);
+			String oldComId = ((Community) u.getAttribute(marker)).getId();
+//			communityScores.clear();
+//			communityScores = communityCounts;
+//			super.computeNode(u);
+			System.out.println(u.getId() + " Falling back to epidemic. Old com " + oldComId + ", new com: " + u.getAttribute(marker));
 		}
+		
 
 	}
 
@@ -163,6 +166,8 @@ public class Sharc_oryg extends EpidemicCommunityAlgorithm {
 
 		if (a.getDegree() == 0 && b.getDegree() == 0)
 			return 0.0;
+		else if (a.getDegree() == 1) // AGATA change: modified neighborhood similarity measure: simialrity = 1 if a node's degree is 1 and we don't care what is degree of b 
+			return 1.0;
 		else
 			return 1 - (similarity / (a.getDegree() + b.getDegree()));
 	}

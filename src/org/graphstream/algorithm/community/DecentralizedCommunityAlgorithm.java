@@ -36,6 +36,7 @@ import java.util.*;
 import org.graphstream.algorithm.DynamicAlgorithm;
 import org.graphstream.graph.*;
 import org.graphstream.stream.Sink;
+import org.graphstream.stream.SinkAdapter;
 
 /**
  * Base class for all distributed community detection algorithm. They all
@@ -44,8 +45,8 @@ import org.graphstream.stream.Sink;
  * @author Guillaume-Jean Herbiet
  * 
  */
-public abstract class DecentralizedCommunityAlgorithm implements
-		DynamicAlgorithm, Sink {
+public abstract class DecentralizedCommunityAlgorithm extends SinkAdapter implements
+		DynamicAlgorithm {
 	/**
 	 * The graph to apply the algorithm.
 	 */
@@ -63,9 +64,16 @@ public abstract class DecentralizedCommunityAlgorithm implements
 	public String getParameter(String name) {
 		String val = null;
 		if (this.params != null) {
-			val = this.params.get(name).toString();
+			val = (String)this.params.get(name);
 		}
 		return val;
+	}
+	/**
+	 * Allows to set generic parameters as a key,value 
+	 * @param params
+	 */
+	public void setParameters(Dictionary<String, Object> params) {
+		this.params = params;
 	}
 	
 	/**
@@ -158,6 +166,10 @@ public abstract class DecentralizedCommunityAlgorithm implements
 		 */
 		if (this.rng == null)
 			rng = new Random();
+		
+		if (this.graph != null)
+			this.graph.removeSink(this);
+		this.graph.addSink(this);
 	}
 
 //	@Override
@@ -196,13 +208,6 @@ public abstract class DecentralizedCommunityAlgorithm implements
 	 */
 	public String getMarker() {
 		return this.marker;
-	}
-
-	/**
-	 * Allows to set generic parameters as a key,value 
-	 * @param params
-	 */
-	public void setParameters(Dictionary<String, Object> params) {
 	}
 	
 	
@@ -247,7 +252,6 @@ public abstract class DecentralizedCommunityAlgorithm implements
 				computeNode(node);
 				updateDisplayClass(node);
 			}
-			graphChanged = staticMode;
 		}
 	}
 
@@ -286,64 +290,85 @@ public abstract class DecentralizedCommunityAlgorithm implements
 	public void attributeChanged(Element element, String attribute,
 			Object oldValue, Object newValue) {
 	}
-
+	
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.graphstream.stream.SinkAdapter#nodeAdded(java.lang.String, long,
+	 * java.lang.String)
+	 */
+	@Override
 	public void nodeAdded(String graphId, long timeId, String nodeId) {
 		graphChanged = true;
 	}
 
+	@Override
 	public void nodeRemoved(String graphId, long timeId, String nodeId) {
 		graphChanged = true;
 	}
 
+	@Override
 	public void edgeAdded(String graphId, long timeId, String edgeId,
 			String fromNodeId, String toNodeId, boolean directed) {
 		graphChanged = true;
 	}
-
+	
+	@Override
 	public void edgeRemoved(String graphId, long timeId, String edgeId) {
 		graphChanged = true;
 	}
 
+	@Override
 	public void graphCleared(String graphId, long timeId) {
 		graphChanged = true;
 	}
 
+	@Override
 	public void stepBegins(String graphId, long timeId, double time) {
 	}
 
+	@Override
 	public void graphAttributeAdded(String graphId, long timeId,
 			String attribute, Object value) {
 	}
 
+	@Override
 	public void graphAttributeChanged(String graphId, long timeId,
 			String attribute, Object oldValue, Object newValue) {
 	}
 
+	@Override
 	public void graphAttributeRemoved(String graphId, long timeId,
 			String attribute) {
 	}
 
+	@Override
 	public void nodeAttributeAdded(String graphId, long timeId, String nodeId,
 			String attribute, Object value) {
 		nodeAttributeChanged(graphId, timeId, nodeId, attribute, null, value);
 	}
 
+	@Override
 	public void nodeAttributeChanged(String graphId, long timeId,
 			String nodeId, String attribute, Object oldValue, Object newValue) {
 	}
 
+	@Override
 	public void nodeAttributeRemoved(String graphId, long timeId,
 			String nodeId, String attribute) {
 	}
 
+	@Override
 	public void edgeAttributeAdded(String graphId, long timeId, String edgeId,
 			String attribute, Object value) {
 	}
 
+	@Override
 	public void edgeAttributeChanged(String graphId, long timeId,
 			String edgeId, String attribute, Object oldValue, Object newValue) {
 	}
-
+	
+	@Override
 	public void edgeAttributeRemoved(String graphId, long timeId,
 			String edgeId, String attribute) {
 	}

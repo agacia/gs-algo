@@ -41,7 +41,7 @@ public class TestSharc_oryg {
 		Node a = graph.getNode("A");
 		Node b = graph.getNode("B");
 		Double sim = sharc.getSimilarity(a, b);
-		assertEquals(0.0, sim);
+		assertEquals(1.0, sim);
 	}
 
 }

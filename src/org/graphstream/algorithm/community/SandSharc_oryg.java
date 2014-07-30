@@ -3,6 +3,7 @@
  */
 package org.graphstream.algorithm.community;
 
+import java.util.Dictionary;
 import java.util.HashMap;
 
 import org.graphstream.graph.Edge;
@@ -166,6 +167,18 @@ public class SandSharc_oryg extends DynSharc_oryg {
 		 */
 		if (u.hasAttribute(marker + ".new_originator"))
 			u.removeAttribute(marker + ".new_originator");
+	}
+	
+	/**
+	 * Allows to set generic parameters as a key,value 
+	 * @param params
+	 */
+	@Override
+	public void setParameters(Dictionary<String, Object> params) {
+		super.setParameters(params);
+		if (params.get("weightMarker") != null) {
+			this.weightMarker = (String) params.get("weightMarker");
+		}
 	}
 
 }

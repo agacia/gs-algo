@@ -142,14 +142,15 @@ public abstract class MobilityMeasure extends SinkAdapter implements
 		Double speedU = getMarkerValue(u, speedMarker);
 		Double speedV = getMarkerValue(v, speedMarker);
 		Double angleU = getMarkerValue(u, angleMarker);
-		Double angleV = getMarkerValue(u, angleMarker);
-		return calculateDegreeOfSpatialDependence(speedU, speedV, angleU, angleV);
+		Double angleV = getMarkerValue(v, angleMarker);
+		Double mobility_sim = calculateDegreeOfSpatialDependence(speedU, speedV, angleU, angleV);
+		return mobility_sim;
 	}
 	
 	// TODO add position, distance?
-	public static Double calculateStaticDegreeOfSpatialDependence(Double angleU, Double angleV) {
-		return calculateCos(angleU, angleV); // <1,0> for degree difference <0,90>, (0,-1) for degree difference (90-180)
-	}
+//	public static Double calculateStaticDegreeOfSpatialDependence(Double angleU, Double angleV) {
+//		return calculateCos(angleU, angleV); // <1,0> for degree difference <0,90>, (0,-1) for degree difference (90-180)
+//	}
 	
 	public static Double calculateDegreeOfSpatialDependence(Double speedU, Double speedV, Double angleU, Double angleV) {
 		return  calculateCos(angleU, angleV) * calculateSpeedRatio(speedU, speedV);
@@ -172,6 +173,8 @@ public abstract class MobilityMeasure extends SinkAdapter implements
 		}
 		Double cos = Math.cos(Math.toRadians(angleU-angleV)); // <1,0> for degree difference <0,90>, (0,-1) for degree difference (90-180) -- different directions
 		cos = cos * 0.5 + 0.5; // <0,1>
+		
+//		System.out.println("angleU " + angleU + ", angleV " + angleV + ", cos " + cos);
 		return cos;
 	}
 	
